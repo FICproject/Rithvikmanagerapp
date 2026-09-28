@@ -1,0 +1,18 @@
+{
+  "name": "fic-manager-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "android": "npm --prefix frontend run android",
+    "start": "npm --prefix frontend start",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "test": "npm --prefix frontend run test",
+    "mobile": "npm --prefix frontend start",
+    "mobile:start": "npm --prefix frontend start",
+    "mobile:android": "npm --prefix frontend run android",
+    "mobile:typecheck": "npm --prefix frontend run typecheck",
+    "mobile:test": "npm --prefix frontend run test",
+    "backend:start": "node backend/server.js",
+    "build:apk": "npm --prefix frontend run build:apk"
+  }
+}
