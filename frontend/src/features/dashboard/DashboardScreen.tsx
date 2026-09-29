@@ -149,14 +149,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           >
             <Icon name="menu" size={26} color="#0F172A" />
           </TouchableOpacity>
-
-          <View style={styles.headerLogoContainer}>
-            <Image
-              source={assets.logo}
-              style={styles.headerLogo}
-              resizeMode="contain"
-            />
-          </View>
         </View>
 
         <View style={styles.headerRightActions}>
@@ -171,23 +163,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.managerHeaderProfile}
+            style={styles.profileCircleButton}
             activeOpacity={0.7}
-            onPress={onOpenDrawer}
-            accessibilityLabel="Manager Profile Menu"
+            onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
+            accessibilityLabel="User Profile"
+            accessibilityRole="button"
           >
             <FICAvatar name={managerDisplayName} size={36} />
-            <View style={styles.managerHeaderTextCol}>
-              <Text style={styles.headerManagerName} numberOfLines={1}>
-                {managerDisplayName}
-              </Text>
-              <View style={styles.managerRoleRow}>
-                <Text style={styles.headerManagerRole} numberOfLines={1}>
-                  {managerDisplayRole}
-                </Text>
-                <Icon name="chevron-down" size={14} color="#64748B" style={styles.roleDropdownIcon} />
-              </View>
-            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -657,38 +639,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#EF4444',
   },
-  managerHeaderProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  managerHeaderAvatar: {
+  profileCircleButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-  },
-  managerHeaderTextCol: {
-    marginLeft: 8,
     justifyContent: 'center',
-  },
-  headerManagerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  managerRoleRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 1,
-  },
-  headerManagerRole: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  roleDropdownIcon: {
-    marginLeft: 2,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    overflow: 'hidden',
   },
   container: {
     flex: 1,
@@ -723,23 +683,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heroTextSection: {
-    maxWidth: '75%',
+    maxWidth: '82%',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   heroGreeting: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#334155',
   },
   heroName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#1E3A8A',
-    marginBottom: 4,
+    color: '#1D4ED8',
+    marginBottom: 2,
   },
   heroSubtext: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#334155',
+    fontWeight: '600',
+    color: '#0F172A',
     lineHeight: 16,
   },
   scopeCapsule: {

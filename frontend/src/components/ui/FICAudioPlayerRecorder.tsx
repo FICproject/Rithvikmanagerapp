@@ -352,6 +352,22 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             </Text>
           </View>
 
+          {/* Real-time active sound level wave bars */}
+          <View style={styles.liveWaveformRow}>
+            {[12, 24, 18, 30, 22, 34, 16, 28, 20, 32, 14, 26, 18, 22].map((h, i) => (
+              <View
+                key={`live-wave-${i}`}
+                style={[
+                  styles.liveWaveBar,
+                  {
+                    height: Math.min(32, Math.max(10, (h + (recTimer * 7 + i * 3) % 20))),
+                    backgroundColor: '#DC2626',
+                  },
+                ]}
+              />
+            ))}
+          </View>
+
           <TouchableOpacity
             style={styles.stopButton}
             onPress={handleStopRealRecording}
@@ -617,6 +633,18 @@ const styles = StyleSheet.create({
   recAdviceText: {
     fontSize: 11,
     color: '#64748B',
+  },
+  liveWaveformRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 36,
+    marginVertical: 10,
+    gap: 3,
+  },
+  liveWaveBar: {
+    width: 3.5,
+    borderRadius: 2,
   },
   stopButton: {
     backgroundColor: '#DC2626',

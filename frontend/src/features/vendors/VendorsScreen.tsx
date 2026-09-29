@@ -186,13 +186,14 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
 
       {/* TOP BRANDING & PROFILE BAR */}
       <View style={styles.topHeader}>
-        <View style={styles.headerLogoContainer}>
-          <Image
-            source={assets.logo}
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.hamburgerButton}
+          activeOpacity={0.7}
+          onPress={onOpenDrawer}
+          accessibilityLabel="Open Navigation Menu"
+        >
+          <Icon name="menu" size={26} color="#0F172A" />
+        </TouchableOpacity>
 
         <View style={styles.headerRightActions}>
           <TouchableOpacity
@@ -206,23 +207,12 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.managerHeaderProfile}
+            style={styles.profileCircleButton}
             activeOpacity={0.7}
-            onPress={onOpenDrawer}
-            accessibilityLabel="Manager Profile Menu"
+            onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
+            accessibilityLabel="User Profile"
           >
             <FICAvatar name={managerDisplayName} size={36} />
-            <View style={styles.managerHeaderTextCol}>
-              <Text style={styles.headerManagerName} numberOfLines={1}>
-                {managerDisplayName}
-              </Text>
-              <View style={styles.managerRoleRow}>
-                <Text style={styles.headerManagerRole} numberOfLines={1}>
-                  {managerDisplayRole}
-                </Text>
-                <Icon name="chevron-down" size={14} color="#64748B" style={styles.roleDropdownIcon} />
-              </View>
-            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -539,6 +529,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
+  hamburgerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerLogoContainer: {
     width: 40,
     height: 40,
@@ -575,31 +572,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#EF4444',
   },
-  managerHeaderProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  managerHeaderTextCol: {
-    marginLeft: 8,
+  profileCircleButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
-  },
-  headerManagerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  managerRoleRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 1,
-  },
-  headerManagerRole: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  roleDropdownIcon: {
-    marginLeft: 2,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    overflow: 'hidden',
   },
   container: {
     flex: 1,

@@ -1602,7 +1602,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   stepperWrapper: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     marginBottom: 8,
   },
   stepperContainer: {
@@ -1610,9 +1610,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderWidth: 1,
     borderColor: '#F1F5F9',
     elevation: 2,
@@ -1622,15 +1622,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   stepItem: {
-    alignItems: 'center',
-  },
-  stepCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+  },
+  stepCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
   },
   stepCircleActive: {
     backgroundColor: '#EA580C',
@@ -1642,8 +1644,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   stepLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '600',
+    textAlign: 'center',
   },
   stepLabelActive: {
     color: '#EA580C',
@@ -1656,10 +1659,10 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   stepperLine: {
-    flex: 1,
+    flex: 0.6,
     height: 2,
-    marginHorizontal: 4,
-    marginBottom: 16,
+    marginHorizontal: 1,
+    marginBottom: 14,
   },
   stepperLineActive: {
     backgroundColor: '#059669',

@@ -23,7 +23,7 @@ export const FICHeader: React.FC<FICHeaderProps> = ({
   rightActionIcon,
   onRightAction,
   style,
-  showLogo = true,
+  showLogo = false,
 }) => {
   return (
     <View style={[styles.header, style]}>

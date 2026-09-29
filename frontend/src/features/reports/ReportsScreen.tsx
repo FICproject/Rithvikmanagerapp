@@ -463,10 +463,6 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           <Icon name="menu" size={26} color="#0F172A" />
         </TouchableOpacity>
 
-        <View style={styles.headerLogoContainer}>
-          <Image source={assets.logo} style={styles.headerLogo} resizeMode="contain" />
-        </View>
-
         <View style={styles.headerRightActions}>
           <TouchableOpacity
             style={styles.bellButton}
@@ -478,22 +474,12 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.managerHeaderProfile}
+            style={styles.profileCircleButton}
             activeOpacity={0.7}
-            onPress={onOpenDrawer}
+            onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
+            accessibilityLabel="User Profile"
           >
             <FICAvatar name={managerDisplayName} size={36} />
-            <View style={styles.managerHeaderTextCol}>
-              <Text style={styles.headerManagerName} numberOfLines={1}>
-                {managerDisplayName}
-              </Text>
-              <View style={styles.managerRoleRow}>
-                <Text style={styles.headerManagerRole} numberOfLines={1}>
-                  {managerDisplayRole}
-                </Text>
-                <Icon name="chevron-down" size={14} color="#64748B" style={styles.roleDropdownIcon} />
-              </View>
-            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -1247,38 +1233,16 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#EF4444',
   },
-  managerHeaderProfile: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  managerHeaderAvatar: {
+  profileCircleButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-  },
-  managerHeaderTextCol: {
-    marginLeft: 8,
     justifyContent: 'center',
-  },
-  headerManagerName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  managerRoleRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 1,
-  },
-  headerManagerRole: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  roleDropdownIcon: {
-    marginLeft: 2,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    overflow: 'hidden',
   },
   container: {
     flex: 1,
