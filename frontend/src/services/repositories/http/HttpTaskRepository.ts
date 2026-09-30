@@ -61,15 +61,17 @@ export class HttpTaskRepository implements ITaskRepository {
     return response.data;
   }
 
-  async completeTask(taskId: string, notes?: string): Promise<Task> {
+  async completeTask(taskId: string, payload?: any): Promise<Task> {
     const token = await this.getToken();
-    const response = await apiClient.patch<Task>(`/tasks/${taskId}/status`, { status: TaskStatus.COMPLETED, notes }, { token });
+    const body = typeof payload === 'string' ? { status: TaskStatus.COMPLETED, notes: payload } : { status: TaskStatus.COMPLETED, ...payload };
+    const response = await apiClient.patch<Task>(`/tasks/${taskId}/status`, body, { token });
     return response.data;
   }
 
-  async resolveHighPriorityTask(taskId: string, resolutionNotes: string): Promise<Task> {
+  async resolveHighPriorityTask(taskId: string, resolutionNotes: string, payload?: any): Promise<Task> {
     const token = await this.getToken();
-    const response = await apiClient.patch<Task>(`/tasks/${taskId}/status`, { status: TaskStatus.COMPLETED, notes: resolutionNotes }, { token });
+    const body = { status: TaskStatus.COMPLETED, notes: resolutionNotes, ...payload };
+    const response = await apiClient.patch<Task>(`/tasks/${taskId}/status`, body, { token });
     return response.data;
   }
 }

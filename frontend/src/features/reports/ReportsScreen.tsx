@@ -12,14 +12,18 @@ import {
   TextInput,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
+import { FICHeader } from '../../components/ui/FICHeader';
 import { FICAvatar } from '../../components/ui/FICAvatar';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
 import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
+import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
+import { theme } from '../../theme';
 import { ASSETS } from '../../assets/logo';
 import { services } from '../../services';
 import { cameraLocationService } from '../../services/camera/CameraLocationService';
@@ -92,6 +96,19 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [records, setRecords] = useState<VisitRecord[]>(INITIAL_VISIT_RECORDS);
   const [filteredRecords, setFilteredRecords] = useState<VisitRecord[]>(INITIAL_VISIT_RECORDS);
 
+  const loadVisitRecords = useCallback(async () => {
+    try {
+      const list = await services.fieldVisitService.getVisitRecords();
+      setRecords(list);
+    } catch {
+      // Keep existing
+    }
+  }, []);
+
+  useEffect(() => {
+    loadVisitRecords();
+  }, [loadVisitRecords]);
+
   // Tab & Filters
   const [activeScopeTab, setActiveScopeTab] = useState<'ALL' | 'MY' | 'DIVISION' | 'PINCODE'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -132,6 +149,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   const [endDateStr, setEndDateStr] = useState<string>('2026-09-28');
   const [reportFormat, setReportFormat] = useState<string>('CSV');
   const [exportResultModal, setExportResultModal] = useState<ExportResult | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportProgressStage, setExportProgressStage] = useState<string>('');
 
   // Filter Logic
   const applyFilters = useCallback(() => {
@@ -176,11 +195,10 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     applyFilters();
   }, [applyFilters]);
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 600);
+    await loadVisitRecords();
+    setIsRefreshing(false);
   };
 
   // Counters
@@ -262,6 +280,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       gpsCoords: formGpsCoords || undefined,
     };
 
+    await services.fieldVisitService.addVisitRecord(newRecord);
     setRecords(prev => [newRecord, ...prev]);
     setIsFieldVisitModalOpen(false);
     resetVisitForm();
@@ -296,6 +315,15 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       console.warn('Photo upload warning:', e);
     }
 
+    let uploadedAudioUrl: string | null = null;
+    if (recordedAudioUri) {
+      try {
+        uploadedAudioUrl = await services.mediaUploadService.uploadAudioReport(recordedAudioUri);
+      } catch (e) {
+        console.warn('Audio upload warning:', e);
+      }
+    }
+
     const newRecord: VisitRecord = {
       id: `visit_${Date.now()}_op_${Math.random().toString(36).substring(2, 6)}`,
       shopName: formShopName.trim(),
@@ -313,6 +341,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       gpsCoords: formGpsCoords || undefined,
     };
 
+    await services.fieldVisitService.addVisitRecord(newRecord);
     setRecords(prev => [newRecord, ...prev]);
     setIsFieldVisitModalOpen(false);
     resetVisitForm();
@@ -334,6 +363,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   };
 
   const handleGenerateReportSubmit = async () => {
+    if (isExporting) return;
+
     if (reportDateRange === 'CUSTOM') {
       if (!startDateStr || !endDateStr) {
         Alert.alert('Validation Error', 'Please specify both Start Date and End Date for custom date range.');
@@ -345,23 +376,34 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       }
     }
 
-    try {
-      const result = await reportExportService.generateReportFile(records, {
-        period: reportDateRange as any,
-        format: reportFormat as any,
-        startDateStr,
-        endDateStr,
-        manager,
-      });
+    setIsExporting(true);
+    setExportProgressStage('Generating report...');
 
+    try {
+      const result = await reportExportService.generateReportFile(
+        records,
+        {
+          period: reportDateRange as any,
+          format: reportFormat as any,
+          startDateStr,
+          endDateStr,
+          manager,
+        },
+        (stage: string) => {
+          setExportProgressStage(stage);
+        }
+      );
+
+      setIsExporting(false);
+      setExportProgressStage('');
       setIsGenerateReportModalOpen(false);
       setExportResultModal(result);
     } catch (err: any) {
-      Alert.alert(
-        'Unable to Generate Report',
-        err.message || 'Unable to generate report for selected filter.',
-        [{ text: 'OK' }]
-      );
+      console.error('[ReportsScreen] handleGenerateReportSubmit error:', err);
+      setIsExporting(false);
+      setExportProgressStage('');
+      const message = err?.message || 'Unable to download report. Please try again.';
+      Alert.alert('Unable to Download Report', message, [{ text: 'OK' }]);
     }
   };
 
@@ -444,45 +486,27 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <Text style={styles.reportDetailsBtnText}>Report Details →</Text>
           </TouchableOpacity>
         </View>
+
+        <FieldActionButtons
+          phoneNumber={(item as any).phone || (item as any).contactPhone}
+          latitude={item.gpsCoords ? parseFloat(item.gpsCoords.split(',')[0]) || null : null}
+          longitude={item.gpsCoords ? parseFloat(item.gpsCoords.split(',')[1]) || null : null}
+          titleOrLabel={item.shopName}
+          address={item.location}
+          style={{ marginTop: 8 }}
+        />
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-      {/* TOP BRANDING & PROFILE BAR (Matching Dashboard & Vendors) */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.hamburgerButton}
-          activeOpacity={0.7}
-          onPress={onOpenDrawer}
-          accessibilityLabel="Open Navigation Menu"
-        >
-          <Icon name="menu" size={26} color="#0F172A" />
-        </TouchableOpacity>
-
-        <View style={styles.headerRightActions}>
-          <TouchableOpacity
-            style={styles.bellButton}
-            activeOpacity={0.7}
-            onPress={() => onNavigateRoute && onNavigateRoute('Notifications')}
-          >
-            <Icon name="bell-outline" size={24} color="#0F172A" />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.profileCircleButton}
-            activeOpacity={0.7}
-            onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
-            accessibilityLabel="User Profile"
-          >
-            <FICAvatar name={managerDisplayName} size={36} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+      <FICHeader
+        title="Reports"
+        leftActionIcon={<Text style={styles.headerIcon}>☰</Text>}
+        onLeftAction={onOpenDrawer}
+      />
 
       <ScrollView
         style={styles.container}
@@ -906,7 +930,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                       recordedAudioUri={recordedAudioUri}
                       audioDurationSeconds={voiceDuration}
                       onStartRecording={() => setIsRecordingVoice(true)}
-                      onStopRecording={(uri, durationSecs) => {
+                      onStopRecording={(uri: string, durationSecs: number) => {
                         setRecordedAudioUri(uri);
                         setVoiceDuration(durationSecs);
                         setIsRecordingVoice(false);
@@ -1016,18 +1040,33 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             </View>
 
             <TouchableOpacity
-              style={styles.generateSubmitBtn}
+              style={[
+                styles.generateSubmitBtn,
+                isExporting && { opacity: 0.6, backgroundColor: '#64748B' },
+              ]}
               activeOpacity={0.85}
+              disabled={isExporting}
               onPress={handleGenerateReportSubmit}
             >
-              <Icon name="download" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text style={styles.generateSubmitBtnText}>Generate & Download Report</Text>
+              {isExporting ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                  <Text style={styles.generateSubmitBtnText}>
+                    {exportProgressStage || 'Generating report...'}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Icon name="download" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.generateSubmitBtnText}>Generate & Download Report</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* MODAL 3: EXPORT SUCCESS RESULT WITH OPEN / SHARE */}
+      {/* MODAL 3: REAL EXPORT SUCCESS - DOWNLOADED TO ANDROID DEVICE */}
       {exportResultModal && (
         <Modal
           visible={!!exportResultModal}
@@ -1036,54 +1075,118 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           onRequestClose={() => setExportResultModal(null)}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.generateReportModalContent}>
+            <View style={[styles.generateReportModalContent, { maxHeight: '85%' }]}>
               <View style={{ alignItems: 'center', marginBottom: 12 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#DCFCE7', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: '#DCFCE7',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 8,
+                  }}
+                >
                   <Icon name="check-circle" size={32} color="#16A34A" />
                 </View>
-                <Text style={styles.modalTitle}>Report Generated Successfully</Text>
+                <Text style={styles.modalTitle}>Report downloaded successfully</Text>
                 <Text style={styles.generateReportSub}>
-                  Real report file created with {exportResultModal.recordCount} audit records for period: {exportResultModal.periodLabel}.
+                  {exportResultModal.recordCount} field visit records verified & saved to device Downloads.
                 </Text>
               </View>
 
-              <View style={{ backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                  <Icon name="file-document-outline" size={18} color="#2563EB" style={{ marginRight: 6 }} />
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A', flex: 1 }} numberOfLines={1}>
+              {/* File Info Box */}
+              <View
+                style={{
+                  backgroundColor: '#F8FAFC',
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: '#E2E8F0',
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#64748B', marginBottom: 4 }}>
+                  File:
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                  <Icon
+                    name={
+                      reportFormat === 'PDF'
+                        ? 'file-pdf-box'
+                        : reportFormat === 'EXCEL'
+                        ? 'file-excel-box'
+                        : 'file-delimited'
+                    }
+                    size={22}
+                    color={reportFormat === 'PDF' ? '#DC2626' : reportFormat === 'EXCEL' ? '#16A34A' : '#2563EB'}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text
+                    style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1 }}
+                    numberOfLines={1}
+                  >
                     {exportResultModal.fileName}
                   </Text>
                 </View>
-                <Text style={{ fontSize: 11, color: '#64748B' }}>
-                  Records Exported: {exportResultModal.recordCount} | Format: {reportFormat}
-                </Text>
+
+                {exportResultModal.displayPath || exportResultModal.filePath ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                    <Icon name="folder-check-outline" size={14} color="#059669" style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 11, color: '#059669', flex: 1 }} numberOfLines={1}>
+                      Saved: {exportResultModal.displayPath || exportResultModal.filePath}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              {/* Action Buttons: [ Open ] and [ Share ] */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
                 <TouchableOpacity
-                  style={[styles.generateSubmitBtn, { flex: 1, marginRight: 6, backgroundColor: '#2563EB' }]}
-                  onPress={() => reportExportService.openFile(exportResultModal)}
+                  style={[
+                    styles.generateSubmitBtn,
+                    { flex: 1, backgroundColor: '#1D4ED8', marginTop: 0, height: 46 },
+                  ]}
+                  onPress={async () => {
+                    const openResult = await reportExportService.openFile(exportResultModal);
+                    if (!openResult.success) {
+                      Alert.alert(
+                        'Unable to Open File',
+                        openResult.message || 'No compatible app found to open this file.'
+                      );
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
-                  <Icon name="download" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
-                  <Text style={styles.generateSubmitBtnText}>Download</Text>
+                  <Icon name="open-in-new" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                  <Text style={styles.generateSubmitBtnText}>Open</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.generateSubmitBtn, { flex: 1, marginLeft: 6, backgroundColor: '#059669' }]}
-                  onPress={() => reportExportService.shareFile(exportResultModal)}
+                  style={[
+                    styles.generateSubmitBtn,
+                    { flex: 1, backgroundColor: '#059669', marginTop: 0, height: 46 },
+                  ]}
+                  onPress={async () => {
+                    try {
+                      await reportExportService.shareFile(exportResultModal);
+                    } catch (err: any) {
+                      Alert.alert('Share Error', err.message || 'Unable to share report file.');
+                    }
+                  }}
                   activeOpacity={0.8}
                 >
-                  <Icon name="share-variant" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
+                  <Icon name="share-variant" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.generateSubmitBtnText}>Share</Text>
                 </TouchableOpacity>
               </View>
 
               <TouchableOpacity
-                style={{ marginTop: 12, paddingVertical: 10, alignItems: 'center' }}
+                style={{ paddingVertical: 8, alignItems: 'center' }}
                 onPress={() => setExportResultModal(null)}
               >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#64748B' }}>Close</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B' }}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1105,7 +1208,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           { label: 'Jobs', value: 'Jobs' },
         ]}
         selectedValue={selectedCategoryFilter}
-        onSelect={val => setSelectedCategoryFilter(val)}
+        onSelect={(val: string) => setSelectedCategoryFilter(val)}
         onClose={() => setShowCategoryFilterModal(false)}
       />
 
@@ -1119,7 +1222,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           { label: 'Not Interested', value: 'NOT_INTERESTED' },
         ]}
         selectedValue={selectedInterestFilter}
-        onSelect={val => setSelectedInterestFilter(val)}
+        onSelect={(val: string) => setSelectedInterestFilter(val)}
         onClose={() => setShowStatusFilterModal(false)}
       />
 
@@ -1129,7 +1232,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         title="Select Business Category"
         options={['Service', 'Product', 'Food', 'Daily Needs', 'Travel', 'Stay', 'Jobs']}
         selectedValue={formCategory}
-        onSelect={val => setFormCategory(val)}
+        onSelect={(val: string) => setFormCategory(val)}
         onClose={() => setShowFormCategoryModal(false)}
       />
 
@@ -1145,7 +1248,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           'Other business reasons',
         ]}
         selectedValue={formNotInterestedReason}
-        onSelect={val => setFormNotInterestedReason(val)}
+        onSelect={(val: string) => setFormNotInterestedReason(val)}
         onClose={() => setShowFormReasonModal(false)}
       />
       {/* Storefront Photo Manual Upload Modal */}
@@ -1154,7 +1257,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         title="Upload Shop Storefront Photo"
         subtitle="Capture real-time photo with camera or choose image from your device gallery."
         currentImageUri={formPhotoUri}
-        onImageSelected={(uri, fileName) => {
+        onImageSelected={(uri: string, fileName?: string) => {
           setFormPhotoUri(uri);
           setFormPhotoName(fileName || 'Storefront_Photo.jpg');
           setFormPhotoCaptured(true);
@@ -1175,6 +1278,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  headerIcon: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   topHeader: {
     height: 64,

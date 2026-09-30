@@ -3,6 +3,16 @@
  */
 import { Priority, Task, TaskStatus } from '../../types';
 
+export interface CompleteTaskPayload {
+  notes?: string;
+  beforePhotoUrl?: string;
+  beforePhotoTimestamp?: string;
+  beforePhotoLocation?: string;
+  afterPhotoUrl?: string;
+  afterPhotoTimestamp?: string;
+  afterPhotoLocation?: string;
+}
+
 export interface ITaskRepository {
   getTasks(assignedManagerId: string, status?: TaskStatus, priority?: Priority): Promise<Task[]>;
   getTaskById(id: string): Promise<Task | null>;
@@ -11,6 +21,6 @@ export interface ITaskRepository {
   blockTask(taskId: string, notes?: string): Promise<Task>;
   resumeTask(taskId: string): Promise<Task>;
   rejectTask(taskId: string, reason: string): Promise<Task>;
-  completeTask(taskId: string, notes?: string): Promise<Task>;
-  resolveHighPriorityTask(taskId: string, resolutionNotes: string): Promise<Task>;
+  completeTask(taskId: string, payload?: CompleteTaskPayload | string): Promise<Task>;
+  resolveHighPriorityTask(taskId: string, resolutionNotes: string, payload?: CompleteTaskPayload): Promise<Task>;
 }

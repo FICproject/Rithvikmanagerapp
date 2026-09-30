@@ -20,6 +20,7 @@ import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FICEmptyState } from '../../components/feedback/FICEmptyState';
 import { IssueCard } from './components/IssueCard';
+import { socketService } from '../../services/realtime/SocketService';
 
 export interface IssuesScreenProps {
   onOpenDrawer?: () => void;
@@ -66,6 +67,39 @@ export const IssuesScreen: React.FC<IssuesScreenProps> = ({
 
   useEffect(() => {
     fetchIssues();
+  }, [fetchIssues]);
+
+  useEffect(() => {
+    const unsub1 = socketService.subscribe<Issue>('issue.status.updated', (payload) => {
+      if (payload.data) {
+        setIssues((prev) =>
+          prev.map((i) => (i.id === payload.entityId ? { ...i, ...payload.data } : i))
+        );
+      }
+    });
+    const unsub2 = socketService.subscribe<Issue>('issue.resolved', (payload) => {
+      if (payload.data) {
+        setIssues((prev) =>
+          prev.map((i) => (i.id === payload.entityId ? { ...i, ...payload.data } : i))
+        );
+      }
+    });
+    const unsub3 = socketService.subscribe<Issue>('issue.updated', (payload) => {
+      if (payload.data) {
+        setIssues((prev) =>
+          prev.map((i) => (i.id === payload.entityId ? { ...i, ...payload.data } : i))
+        );
+      }
+    });
+    const unsubReconnect = socketService.onReconnect(() => {
+      fetchIssues(true);
+    });
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+      unsubReconnect();
+    };
   }, [fetchIssues]);
 
   const handleRefresh = () => {

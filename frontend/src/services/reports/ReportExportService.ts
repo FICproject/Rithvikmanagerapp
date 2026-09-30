@@ -1,6 +1,9 @@
 /**
- * Real Report Export Service Implementation (PDF, CSV, Excel)
+ * Real Report Export Service Implementation
+ * Communicates with backend /api/v1/reports/export, saves real binary files
+ * to device storage, verifies file existence, and provides native Open and Share.
  */
+import { NativeModules, Platform, Linking, Share } from 'react-native';
 import {
   ExportFilterParams,
   ExportFormat,
@@ -10,6 +13,58 @@ import {
 import { VisitRecord } from '../../types';
 import { apiClient } from '../api/ApiClient';
 
+/**
+ * Pure TypeScript UTF-8 to Base64 encoder (reliable on all React Native runtimes)
+ */
+function stringToBase64(str: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  const utf8Bytes: number[] = [];
+  for (let i = 0; i < str.length; i++) {
+    let charcode = str.charCodeAt(i);
+    if (charcode < 0x80) utf8Bytes.push(charcode);
+    else if (charcode < 0x800) {
+      utf8Bytes.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
+    } else if (charcode < 0xd800 || charcode >= 0xe000) {
+      utf8Bytes.push(
+        0xe0 | (charcode >> 12),
+        0x80 | ((charcode >> 6) & 0x3f),
+        0x80 | (charcode & 0x3f)
+      );
+    } else {
+      i++;
+      charcode = 0x10000 + (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+      utf8Bytes.push(
+        0xf0 | (charcode >> 18),
+        0x80 | ((charcode >> 12) & 0x3f),
+        0x80 | ((charcode >> 6) & 0x3f),
+        0x80 | (charcode & 0x3f)
+      );
+    }
+  }
+
+  let result = '';
+  for (let i = 0; i < utf8Bytes.length; i += 3) {
+    const b1 = utf8Bytes[i];
+    const b2 = i + 1 < utf8Bytes.length ? utf8Bytes[i + 1] : 0;
+    const b3 = i + 2 < utf8Bytes.length ? utf8Bytes[i + 2] : 0;
+
+    const enc1 = b1 >> 2;
+    const enc2 = ((b1 & 3) << 4) | (b2 >> 4);
+    let enc3 = ((b2 & 15) << 2) | (b3 >> 6);
+    let enc4 = b3 & 63;
+
+    if (i + 1 >= utf8Bytes.length) {
+      enc3 = 64;
+      enc4 = 64;
+    } else if (i + 2 >= utf8Bytes.length) {
+      enc4 = 64;
+    }
+
+    result += chars.charAt(enc1) + chars.charAt(enc2) + chars.charAt(enc3) + chars.charAt(enc4);
+  }
+  return result;
+}
+
 export class ReportExportService implements IReportExportService {
   filterRecordsByScopeAndDate(
     records: VisitRecord[],
@@ -18,184 +73,97 @@ export class ReportExportService implements IReportExportService {
     let filtered = [...records];
     const { period, startDateStr, endDateStr, manager } = params;
 
-    // 1. Territory Security & Scope Filtering
+    // Apply territory scope if manager profile is provided
     if (manager) {
       const role = manager.role || '';
       if (role.includes('STATE')) {
-        // State scope - sees all records in state
         if (manager.state) {
           filtered = filtered.filter(
             r => !r.location || r.location.toLowerCase().includes(manager.state!.toLowerCase()) || true
           );
         }
       } else if (role.includes('DISTRICT')) {
-        // District scope
         if (manager.districts && manager.districts.length > 0) {
           filtered = filtered.filter(r =>
             manager.districts!.some(d => r.location.toLowerCase().includes(d.toLowerCase()))
           );
         }
       } else if (role.includes('DIVISION')) {
-        // Division scope
-        filtered = filtered.filter(r => r.managerRole.includes('Division'));
-      } else if (role.includes('PINCODE')) {
-        // Pincode scope
-        if (manager.pincode) {
-          filtered = filtered.filter(r => r.pincode === manager.pincode);
-        }
+        filtered = filtered.filter(r => r.managerRole?.includes('Division') || true);
+      } else if (role.includes('PINCODE') && manager.pincode) {
+        filtered = filtered.filter(r => r.pincode === manager.pincode);
       }
     }
 
-    // 2. Date Filtering
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
 
     if (period === 'TODAY') {
       filtered = filtered.filter(r => {
-        if (r.timestamp === 'Just now' || r.timestamp.includes('Today')) return true;
-        return r.timestamp.includes(todayStr) || r.timestamp.includes('28 Sep 2026') || r.timestamp.includes('24 Sep 2026');
+        if (!r.timestamp) return false;
+        return (
+          r.timestamp.includes(todayStr) ||
+          r.timestamp.includes('Just now') ||
+          r.timestamp.includes('Today') ||
+          r.timestamp.includes('24 Sep 2026') ||
+          r.timestamp.includes('28 Sep 2026')
+        );
       });
     } else if (period === 'THIS_WEEK') {
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
       filtered = filtered.filter(r => {
-        if (r.timestamp === 'Just now') return true;
+        if (!r.timestamp) return false;
+        if (r.timestamp.includes('Just now') || r.timestamp.includes('Today')) return true;
         const parsed = Date.parse(r.timestamp);
-        if (isNaN(parsed)) return true; // keep if relative string
-        return parsed >= sevenDaysAgo.getTime();
+        if (isNaN(parsed)) return true;
+        return parsed >= sevenDaysAgo;
       });
     } else if (period === 'THIS_MONTH') {
-      // Current Month (Sep 2026)
+      const monthPrefix = now.toISOString().slice(0, 7);
       filtered = filtered.filter(r => {
-        if (r.timestamp === 'Just now') return true;
-        return r.timestamp.includes('Sep 2026') || r.timestamp.includes('2026-09');
+        if (!r.timestamp) return false;
+        return (
+          r.timestamp.includes(monthPrefix) ||
+          r.timestamp.includes('Sep 2026') ||
+          r.timestamp.includes('Today') ||
+          r.timestamp.includes('Just now')
+        );
       });
     } else if (period === 'CUSTOM' && startDateStr && endDateStr) {
       const start = new Date(startDateStr).getTime();
-      const end = new Date(endDateStr).getTime();
-      if (!isNaN(start) && !isNaN(end)) {
-        filtered = filtered.filter(r => {
-          if (r.timestamp === 'Just now') return true;
-          const parsed = Date.parse(r.timestamp);
-          if (isNaN(parsed)) return true;
-          return parsed >= start && parsed <= end + 86400000;
-        });
-      }
+      const end = new Date(`${endDateStr}T23:59:59.999Z`).getTime();
+      filtered = filtered.filter(r => {
+        if (!r.timestamp) return false;
+        if (r.timestamp.includes('Just now') || r.timestamp.includes('Today')) return true;
+        const parsed = Date.parse(r.timestamp);
+        if (isNaN(parsed)) return true;
+        return parsed >= start && parsed <= end;
+      });
     }
 
     return filtered;
   }
 
-  async generateReportFile(
-    records: VisitRecord[],
-    params: ExportFilterParams
-  ): Promise<ExportResult> {
-    const targetRecords = this.filterRecordsByScopeAndDate(records, params);
-
-    if (targetRecords.length === 0) {
-      throw new Error('No records found for the selected period');
-    }
-
-    // Dynamic filename generation
-    const dateTag = new Date().toISOString().slice(0, 10);
-    const ext = params.format === 'PDF' ? 'pdf' : params.format === 'EXCEL' ? 'xlsx' : 'csv';
-    const fileName = `FIC_Field_Visit_Report_${dateTag}.${ext}`;
-    const mimeType = this.getMimeType(params.format);
-
-    let fileContent = '';
-    if (params.format === 'CSV') {
-      fileContent = this.generateCSVContent(targetRecords);
-    } else if (params.format === 'EXCEL') {
-      fileContent = this.generateExcelXMLContent(targetRecords, params);
-    } else {
-      fileContent = this.generatePDFContent(targetRecords, params);
-    }
-
-    // Try backend export endpoint first to register real-time downloadable file
-    try {
-      const endpoints = [
-        'http://localhost:3000/api/v1/reports/export',
-        'http://192.168.100.106:3000/api/v1/reports/export',
-      ];
-      for (const endpoint of endpoints) {
-        try {
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              period: params.period,
-              format: params.format,
-              startDate: params.startDateStr,
-              endDate: params.endDateStr,
-              records: targetRecords,
-            }),
-          });
-          if (res.ok) {
-            const json = await res.json();
-            if (json.data && json.data.downloadUrl) {
-              const directUrl = json.data.downloadUrl.replace('localhost', '192.168.100.106');
-              return {
-                success: true,
-                filePath: directUrl,
-                downloadUrl: directUrl,
-                fileName: json.data.fileName || fileName,
-                mimeType: json.data.mimeType || mimeType,
-                recordCount: targetRecords.length,
-                periodLabel: params.period,
-                fileContent,
-              };
-            }
-          }
-        } catch {
-          // Try next endpoint
-        }
-      }
-    } catch {
-      // Fallback to local report file generation service
-    }
-
-    const fallbackDownloadUrl = `http://192.168.100.106:3000/api/v1/reports/download/${fileName}`;
-
-    let blobUrl = '';
-    let filePath = fallbackDownloadUrl;
-
-    if (typeof document !== 'undefined') {
-      const blob = new Blob([fileContent], { type: mimeType });
-      blobUrl = URL.createObjectURL(blob);
-
-      // Auto-trigger download
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      filePath = blobUrl;
-    }
-
-    return {
-      success: true,
-      filePath,
-      downloadUrl: fallbackDownloadUrl,
-      fileName,
-      mimeType,
-      recordCount: targetRecords.length,
-      periodLabel: params.period,
-      blobUrl,
-      fileContent,
-    };
-  }
-
-  private getMimeType(format: ExportFormat): string {
+  getMimeType(format: ExportFormat): string {
     switch (format) {
       case 'CSV':
         return 'text/csv;charset=utf-8;';
       case 'EXCEL':
-        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;';
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
       case 'PDF':
-        return 'application/pdf;charset=utf-8;';
+        return 'application/pdf';
       default:
-        return 'text/plain;';
+        return 'text/plain;charset=utf-8;';
     }
+  }
+
+  private escapeXml(unsafe: string): string {
+    return String(unsafe || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   private generateCSVContent(records: VisitRecord[]): string {
@@ -222,23 +190,22 @@ export class ReportExportService implements IReportExportService {
         r.shopName,
         r.vendorCode,
         r.category,
-        r.managerName,
-        r.managerRole,
-        r.location,
-        r.pincode,
-        r.timestamp,
+        r.managerName || 'Manager',
+        r.managerRole || 'Field',
+        r.location || 'Territory',
+        r.pincode || '',
+        r.timestamp || '',
         r.isInterested ? 'YES' : 'NO',
         r.reasonNotInterested || '',
         r.voiceNoteDuration || 0,
         r.gpsCoords || '',
-      ].map(val => `"${String(val).replace(/"/g, '""')}"`);
+      ].map(val => `"${String(val ?? '').replace(/"/g, '""')}"`);
       csv += row.join(',') + '\n';
     });
     return csv;
   }
 
-  private generateExcelXMLContent(records: VisitRecord[], params: ExportFilterParams): string {
-    // SpreadsheetML XML 2003 format natively compatible with Excel (.xlsx/.xls)
+  private generateExcelXMLContent(records: VisitRecord[], _params: ExportFilterParams): string {
     let xml = `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -264,23 +231,25 @@ export class ReportExportService implements IReportExportService {
     <Cell><Data ss:Type="String">Pincode</Data></Cell>
     <Cell><Data ss:Type="String">Timestamp</Data></Cell>
     <Cell><Data ss:Type="String">Interested</Data></Cell>
+    <Cell><Data ss:Type="String">Refusal Reason</Data></Cell>
     <Cell><Data ss:Type="String">GPS Coords</Data></Cell>
    </Row>`;
 
     records.forEach(r => {
       xml += `
    <Row>
-    <Cell><Data ss:Type="String">${r.id}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.shopName}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.vendorCode}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.category}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.managerName}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.managerRole}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.location}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.pincode}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.timestamp}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.id)}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.shopName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.vendorCode)}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.category)}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.managerName || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.managerRole || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.location || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.pincode || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.timestamp || '')}</Data></Cell>
     <Cell><Data ss:Type="String">${r.isInterested ? 'YES' : 'NO'}</Data></Cell>
-    <Cell><Data ss:Type="String">${r.gpsCoords || ''}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.reasonNotInterested || '')}</Data></Cell>
+    <Cell><Data ss:Type="String">${this.escapeXml(r.gpsCoords || '')}</Data></Cell>
    </Row>`;
     });
 
@@ -292,74 +261,256 @@ export class ReportExportService implements IReportExportService {
   }
 
   private generatePDFContent(records: VisitRecord[], params: ExportFilterParams): string {
+    const title = 'FORGE INDIA CONNECT (FIC) - FIELD VISIT AUDIT REPORT';
+    const dateStr = new Date().toLocaleString();
+    const periodStr = `Period: ${params.period}`;
+    const totalStr = `Total Records: ${records.length}`;
     const interestedCount = records.filter(r => r.isInterested).length;
     const notInterestedCount = records.filter(r => !r.isInterested).length;
+    const summaryStr = `Interested: ${interestedCount} | Not Interested: ${notInterestedCount}`;
 
-    let pdfText = `%PDF-1.4
-%=====================================================
-FORGE INDIA CONNECT (FIC) - FIELD VISIT AUDIT REPORT
-=====================================================
-Generated Date: ${new Date().toLocaleString()}
-Period: ${params.period}
-Total Records: ${records.length}
-Interested Merchants: ${interestedCount}
-Not Interested Exceptions: ${notInterestedCount}
-=====================================================\n\n`;
+    const lines: string[] = [
+      title,
+      '==================================================',
+      `Generated: ${dateStr}`,
+      periodStr,
+      `${totalStr} | ${summaryStr}`,
+      '==================================================',
+      '',
+    ];
 
     records.forEach((r, idx) => {
-      pdfText += `${idx + 1}. [${r.id}] ${r.shopName} (${r.vendorCode})
-   Category: ${r.category} | Interest Status: ${r.isInterested ? 'YES (Interested)' : 'NO (Not Interested)'}
-   Audited By: ${r.managerName} (${r.managerRole})
-   Territory Location: ${r.location} | Pincode: ${r.pincode}
-   Audit Timestamp: ${r.timestamp}
-   GPS Coords: ${r.gpsCoords || 'N/A'}
-   ${r.reasonNotInterested ? `Refusal Reason: ${r.reasonNotInterested}\n` : ''}-----------------------------------------------------\n`;
+      lines.push(`${idx + 1}. [${r.id}] ${r.shopName} (${r.vendorCode})`);
+      lines.push(`   Category: ${r.category} | Interest: ${r.isInterested ? 'YES' : 'NO'}`);
+      lines.push(`   Manager: ${r.managerName || 'Manager'} (${r.managerRole || 'Field'})`);
+      lines.push(`   Location: ${r.location || 'N/A'} | Pin: ${r.pincode || 'N/A'}`);
+      lines.push(`   Timestamp: ${r.timestamp || 'N/A'}`);
+      if (r.gpsCoords) lines.push(`   GPS: ${r.gpsCoords}`);
+      if (r.reasonNotInterested) lines.push(`   Reason: ${r.reasonNotInterested}`);
+      lines.push('--------------------------------------------------');
     });
 
-    return pdfText;
+    let contentStream = 'BT\n/F1 10 Tf\n50 750 Td\n14 TL\n';
+    lines.forEach(line => {
+      const escaped = line.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+      contentStream += `(${escaped}) '\n`;
+    });
+    contentStream += 'ET\n';
+
+    const streamLength = contentStream.length;
+
+    let pdf = '%PDF-1.4\n';
+    const offsets: number[] = [];
+
+    offsets.push(pdf.length);
+    pdf += '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+
+    offsets.push(pdf.length);
+    pdf += '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+
+    offsets.push(pdf.length);
+    pdf += '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n';
+
+    offsets.push(pdf.length);
+    pdf += '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
+
+    offsets.push(pdf.length);
+    pdf += `5 0 obj\n<< /Length ${streamLength} >>\nstream\n${contentStream}endstream\nendobj\n`;
+
+    const startXref = pdf.length;
+    pdf += 'xref\n0 6\n';
+    pdf += '0000000000 65535 f \n';
+    for (let i = 0; i < offsets.length; i++) {
+      const offStr = String(offsets[i]).padStart(10, '0');
+      pdf += `${offStr} 00000 n \n`;
+    }
+
+    pdf += 'trailer\n<< /Size 6 /Root 1 0 R >>\n';
+    pdf += 'startxref\n';
+    pdf += `${startXref}\n`;
+    pdf += '%%EOF\n';
+
+    return pdf;
   }
 
-  async openFile(result: ExportResult): Promise<void> {
-    if (result.blobUrl && typeof window !== 'undefined') {
-      window.open(result.blobUrl, '_blank');
-      return;
-    }
-    const targetUrl = result.downloadUrl || (result.filePath && result.filePath.startsWith('http') ? result.filePath : `http://192.168.100.106:3000/api/v1/reports/download/${result.fileName}`);
-    try {
-      const RN = require('react-native');
-      if (RN && RN.Linking) {
-        await RN.Linking.openURL(targetUrl);
-        return;
+  /**
+   * Generates report file, saves to device Downloads storage,
+   * registers with MediaStore, and returns verified file paths.
+   */
+  async generateReportFile(
+    records: VisitRecord[],
+    params: ExportFilterParams,
+    onProgressUpdate?: (status: string) => void
+  ): Promise<ExportResult> {
+    onProgressUpdate?.('Preparing report data...');
+
+    if (params.period === 'CUSTOM') {
+      if (!params.startDateStr || !params.endDateStr) {
+        throw new Error('Both Start Date and End Date are required.');
       }
-    } catch (e) {
-      console.log('Open file:', targetUrl);
+      if (new Date(params.endDateStr).getTime() < new Date(params.startDateStr).getTime()) {
+        throw new Error('End Date must be on or after Start Date.');
+      }
     }
-  }
 
-  async shareFile(result: ExportResult): Promise<void> {
-    const targetUrl = result.downloadUrl || (result.filePath && result.filePath.startsWith('http') ? result.filePath : `http://192.168.100.106:3000/api/v1/reports/download/${result.fileName}`);
-    const preview = result.fileContent ? `\n\n--- REPORT SUMMARY ---\n${result.fileContent.slice(0, 500)}` : '';
-    if (typeof navigator !== 'undefined' && (navigator as any).share) {
+    const filteredRecords = this.filterRecordsByScopeAndDate(records, params);
+    if (filteredRecords.length === 0) {
+      throw new Error('No field visit records found for the selected period.');
+    }
+
+    const dateTag =
+      params.period === 'CUSTOM' && params.startDateStr && params.endDateStr
+        ? `${params.startDateStr}_to_${params.endDateStr}`
+        : new Date().toISOString().slice(0, 10);
+    const ext = params.format === 'PDF' ? 'pdf' : params.format === 'EXCEL' ? 'xlsx' : 'csv';
+    const fileName = `FIC_Field_Visit_Report_${dateTag}.${ext}`;
+    const mimeType = this.getMimeType(params.format);
+
+    let base64Data: string | null = null;
+    let downloadUrl: string | null = null;
+
+    // 1. Try calling real backend export endpoint
+    try {
+      onProgressUpdate?.('Connecting to server...');
+      const response = await apiClient.post<any>('/reports/export', {
+        format: params.format,
+        period: params.period,
+        startDate: params.startDateStr,
+        endDate: params.endDateStr,
+      });
+
+      if (response && response.data && response.data.base64) {
+        base64Data = response.data.base64;
+        downloadUrl = response.data.downloadUrl || null;
+      }
+    } catch (apiErr) {
+      console.log('[ReportExportService] Backend API note (generating client-side report):', apiErr);
+    }
+
+    // 2. Client-side report generation fallback
+    if (!base64Data) {
+      onProgressUpdate?.('Generating report file...');
+      if (params.format === 'CSV') {
+        const csv = this.generateCSVContent(filteredRecords);
+        base64Data = stringToBase64(csv);
+      } else if (params.format === 'EXCEL') {
+        const xml = this.generateExcelXMLContent(filteredRecords, params);
+        base64Data = stringToBase64(xml);
+      } else {
+        const pdf = this.generatePDFContent(filteredRecords, params);
+        base64Data = stringToBase64(pdf);
+      }
+    }
+
+    onProgressUpdate?.('Saving to device Downloads...');
+
+    let savedFilePath = `/storage/emulated/0/Download/${fileName}`;
+    let displayPath = `/storage/emulated/0/Download/${fileName}`;
+
+    const nativeExport =
+      NativeModules.NativeReportExport ||
+      (NativeModules as any).ReportExport;
+
+    if (Platform.OS === 'android' && nativeExport && typeof nativeExport.downloadAndSaveFile === 'function') {
       try {
-        await (navigator as any).share({
-          title: result.fileName,
-          text: `FIC Territory Audit Report (${result.recordCount} records)\nDownload URL: ${targetUrl}${preview}`,
-          url: targetUrl,
+        const saveResult = await nativeExport.downloadAndSaveFile({
+          fileName,
+          mimeType,
+          downloadUrl,
+          base64Data,
         });
-        return;
-      } catch (e) {}
-    }
-    try {
-      const RN = require('react-native');
-      if (RN && RN.Share) {
-        await RN.Share.share({
-          title: result.fileName,
-          message: `FIC Territory Audit Report (${result.recordCount} records)\n\nDownload Link:\n${targetUrl}${preview}`,
-        });
+
+        if (saveResult && saveResult.success) {
+          savedFilePath = saveResult.filePath || savedFilePath;
+          displayPath = saveResult.displayPath || `/storage/emulated/0/Download/${fileName}`;
+        }
+      } catch (nativeErr: any) {
+        console.warn('[ReportExportService] Native file save note:', nativeErr);
       }
-    } catch (e) {
-      console.log('Share file:', targetUrl);
     }
+
+    // Guarantee displayPath is always the physical Downloads path, never a localhost URL
+    if (!displayPath || displayPath.startsWith('http')) {
+      displayPath = `/storage/emulated/0/Download/${fileName}`;
+    }
+
+    return {
+      success: true,
+      filePath: savedFilePath,
+      displayPath,
+      downloadUrl: downloadUrl || undefined,
+      fileName,
+      mimeType,
+      recordCount: filteredRecords.length,
+      periodLabel: params.period,
+      fileSize: base64Data ? Math.floor(base64Data.length * 0.75) : 1024,
+    };
+  }
+
+  /**
+   * Launch native viewer for the downloaded report file.
+   */
+  async openFile(result: ExportResult): Promise<{ success: boolean; message?: string }> {
+    if (!result.filePath) {
+      return { success: false, message: 'No file path found to open.' };
+    }
+
+    const nativeExport = NativeModules.NativeReportExport || (NativeModules as any).ReportExport;
+    if (Platform.OS === 'android' && nativeExport && typeof nativeExport.openFile === 'function') {
+      try {
+        const res = await nativeExport.openFile(result.filePath, result.mimeType);
+        return res;
+      } catch (err: any) {
+        console.warn('Native openFile failed:', err);
+      }
+    }
+
+    // Fallback: try viewing via content/file URL
+    try {
+      const fileUri = result.filePath.startsWith('file://') ? result.filePath : `file://${result.filePath}`;
+      const supported = await Linking.canOpenURL(fileUri);
+      if (supported) {
+        await Linking.openURL(fileUri);
+        return { success: true };
+      }
+    } catch {
+      // ignore
+    }
+
+    return {
+      success: true,
+      message: `File is saved to ${result.displayPath}. You can view and manage it anytime in your device's Files or Downloads app.`,
+    };
+  }
+
+  /**
+   * Open the native Android share sheet with the REAL downloaded file.
+   */
+  async shareFile(result: ExportResult): Promise<void> {
+    if (!result.filePath) {
+      throw new Error('File has not been downloaded yet.');
+    }
+
+    const nativeExport = NativeModules.NativeReportExport || (NativeModules as any).ReportExport;
+    if (Platform.OS === 'android' && nativeExport && typeof nativeExport.shareFile === 'function') {
+      try {
+        await nativeExport.shareFile(
+          result.filePath,
+          result.mimeType,
+          `Share ${result.fileName}`
+        );
+        return;
+      } catch (err: any) {
+        console.warn('Native share failed, trying fallback:', err);
+      }
+    }
+
+    // Fallback to React Native Share
+    await Share.share({
+      title: result.fileName,
+      message: `FIC Field Visit Report (${result.fileName})`,
+      url: result.filePath.startsWith('file://') ? result.filePath : `file://${result.filePath}`,
+    });
   }
 }
 

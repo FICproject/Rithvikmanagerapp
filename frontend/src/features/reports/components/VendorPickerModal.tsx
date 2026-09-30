@@ -42,7 +42,12 @@ export const VendorPickerModal: React.FC<VendorPickerModalProps> = ({
     setIsLoading(true);
     try {
       const list = await services.vendorRepository.getVendors();
-      setVendors(list);
+      const sorted = [...list].sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
+      setVendors(sorted);
     } catch {
       setVendors([]);
     } finally {

@@ -23,10 +23,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export interface LoginScreenProps {
   onForgotPassword?: () => void;
   onRegister?: () => void;
+  onOtpLogin?: () => void;
 }
 
 // ─── Main Login Screen ───────────────────────────────────────────────
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onForgotPassword, onRegister }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onForgotPassword,
+  onRegister,
+  onOtpLogin,
+}) => {
   const { login, isLoading, authError, clearAuthError } = useAuth();
 
   const [username, setUsername] = useState<string>('ramesh@forge.in');
@@ -233,6 +238,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onForgotPassword, onRe
                 <Icon name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
               )}
             </TouchableOpacity>
+
+            {/* Login with OTP Button */}
+            {onOtpLogin && (
+              <TouchableOpacity
+                style={styles.otpButton}
+                activeOpacity={0.8}
+                onPress={onOtpLogin}
+                accessibilityRole="button"
+                accessibilityLabel="Login with OTP Verification"
+              >
+                <Icon name="shield-key-outline" size={20} color="#0B4A8B" style={{ marginRight: 8 }} />
+                <Text style={styles.otpButtonText}>Login with OTP Verification</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Registration Card Button */}
             {onRegister && (
@@ -469,7 +488,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.3,
   },
-
+  otpButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EBF3FB',
+    borderRadius: 14,
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    marginBottom: 4,
+  },
+  otpButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#0B4A8B',
+  },
 
   // ── Register Card ──
   registerCard: {

@@ -332,39 +332,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </TouchableOpacity>
         </View>
 
-        {/* DIRECT SUPERVISOR ACTION CARD */}
-        <View style={styles.supervisorCard}>
-          <View style={styles.supervisorHeaderRow}>
-            <View style={styles.supervisorAvatarCircle}>
-              <Icon name="shield-account" size={24} color="#1D4ED8" />
-            </View>
-            <View style={styles.supervisorMetaCol}>
-              <Text style={styles.supervisorTitle}>Direct Supervisor</Text>
-              <Text style={styles.supervisorName}>K. Venkatesh (Regional Operations Director)</Text>
-              <Text style={styles.supervisorSub}>State HQ • Tamil Nadu Jurisdiction</Text>
-            </View>
-          </View>
-          <View style={styles.supervisorBtnRow}>
-            <TouchableOpacity
-              style={styles.supervisorCallBtn}
-              activeOpacity={0.8}
-              onPress={() => Linking.openURL('tel:+919443300001').catch(() => Alert.alert('Call', 'Dial: +91 94433 00001'))}
-            >
-              <Icon name="phone" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-              <Text style={styles.supervisorBtnText}>Call Supervisor</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.supervisorEmailBtn}
-              activeOpacity={0.8}
-              onPress={() => Linking.openURL('mailto:k.venkatesh@forgeindia.in').catch(() => Alert.alert('Email', 'k.venkatesh@forgeindia.in'))}
-            >
-              <Icon name="email-outline" size={16} color="#1D4ED8" style={{ marginRight: 6 }} />
-              <Text style={styles.supervisorEmailBtnText}>Email Supervisor</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* QUICK ACTIONS */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionHeading}>Quick Actions</Text>
@@ -683,50 +650,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   heroTextSection: {
-    maxWidth: '82%',
-    backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    maxWidth: '85%',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.95)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   heroGreeting: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#334155',
   },
   heroName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: '#1D4ED8',
     marginBottom: 2,
   },
   heroSubtext: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
     color: '#0F172A',
-    lineHeight: 16,
+    lineHeight: 17,
   },
   scopeCapsule: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 20,
     alignSelf: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 4,
   },
   locationPin: {
     fontSize: 11,
@@ -739,13 +708,13 @@ const styles = StyleSheet.create({
   },
   scopeSeparator: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: '#64748B',
     marginHorizontal: 4,
   },
   scopeText: {
     fontSize: 11,
-    color: '#475569',
-    fontWeight: '500',
+    color: '#334155',
+    fontWeight: '600',
   },
   /* Date Filter Bar */
   dateFilterBar: {
@@ -847,89 +816,6 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#94A3B8',
     marginTop: 1,
-  },
-  /* Supervisor Direct Action Card */
-  supervisorCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  supervisorHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  supervisorAvatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  supervisorMetaCol: {
-    flex: 1,
-  },
-  supervisorTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2563EB',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  supervisorName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginTop: 1,
-  },
-  supervisorSub: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  supervisorBtnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  supervisorCallBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1D4ED8',
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  supervisorBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  supervisorEmailBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  supervisorEmailBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1D4ED8',
   },
   /* Quick Actions */
   sectionHeaderRow: {

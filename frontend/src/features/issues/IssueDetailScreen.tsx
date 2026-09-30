@@ -19,6 +19,8 @@ import { FICStatusBadge } from '../../components/ui/FICStatusBadge';
 import { FICPriorityBadge } from '../../components/ui/FICPriorityBadge';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
+import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
+import { socketService } from '../../services/realtime/SocketService';
 import { formatDate } from './components/IssueCard';
 
 export interface IssueDetailScreenProps {
@@ -62,6 +64,29 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
   useEffect(() => {
     fetchIssueDetail();
   }, [fetchIssueDetail]);
+
+  useEffect(() => {
+    const unsub1 = socketService.subscribe<Issue>('issue.status.updated', (payload) => {
+      if (issue && payload.entityId === issue.id && payload.data) {
+        setIssue((prev) => (prev ? ({ ...prev, ...payload.data } as Issue) : (payload.data || null)));
+      }
+    });
+    const unsub2 = socketService.subscribe<Issue>('issue.resolved', (payload) => {
+      if (issue && payload.entityId === issue.id && payload.data) {
+        setIssue((prev) => (prev ? ({ ...prev, ...payload.data } as Issue) : (payload.data || null)));
+      }
+    });
+    const unsub3 = socketService.subscribe<Issue>('issue.updated', (payload) => {
+      if (issue && payload.entityId === issue.id && payload.data) {
+        setIssue((prev) => (prev ? ({ ...prev, ...payload.data } as Issue) : (payload.data || null)));
+      }
+    });
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+    };
+  }, [issue]);
 
   const handleUpdateStatus = async (newStatus: IssueStatus) => {
     if (!issue) return;
@@ -143,12 +168,35 @@ export const IssueDetailScreen: React.FC<IssueDetailScreenProps> = ({
             <Text style={styles.infoValue}>{issue.assignedManagerId}</Text>
           </View>
 
+          {issue.contactName ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Contact Person:</Text>
+              <Text style={styles.infoValue}>{issue.contactName}</Text>
+            </View>
+          ) : null}
+
+          {issue.contactPhone ? (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone:</Text>
+              <Text style={styles.infoValue}>{issue.contactPhone}</Text>
+            </View>
+          ) : null}
+
           {issue.resolvedAt ? (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Resolved Date:</Text>
               <Text style={styles.infoValue}>{formatDate(issue.resolvedAt)}</Text>
             </View>
           ) : null}
+
+          <FieldActionButtons
+            phoneNumber={issue.contactPhone}
+            latitude={issue.latitude}
+            longitude={issue.longitude}
+            titleOrLabel={issue.contactName || issue.vendorName || issue.title}
+            address={issue.address || issue.location}
+            style={{ marginTop: 12 }}
+          />
         </FICCard>
 
         {/* Description Section */}

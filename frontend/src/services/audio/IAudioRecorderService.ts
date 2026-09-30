@@ -8,6 +8,7 @@ export interface AudioRecordingResult {
   mimeType: string;
   source?: 'RECORDED' | 'UPLOADED';
   fileName?: string;
+  fileSize?: number;
 }
 
 export type PermissionStatus = 'GRANTED' | 'DENIED' | 'NEVER_ASK_AGAIN';
@@ -19,5 +20,11 @@ export interface IAudioRecorderService {
   cancelRecording(): Promise<void>;
   releaseMicrophone(): Promise<void>;
   isRecording(): boolean;
+  getRecordingStatus?(): Promise<{ isRecording: boolean; elapsedSeconds: number; amplitude: number }>;
+  pickAudioFile(): Promise<AudioRecordingResult | null>;
+  startPlayback(filePath: string): Promise<{ duration: number }>;
+  pausePlayback(): Promise<void>;
+  resumePlayback(): Promise<void>;
+  stopPlayback(): Promise<void>;
+  getPlaybackStatus?(): Promise<{ isPlaying: boolean; currentPosition: number; duration: number }>;
 }
-

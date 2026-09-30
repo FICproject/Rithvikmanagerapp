@@ -26,6 +26,35 @@
     <uses-feature
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
+
+    <!-- Queries for document viewers and sharing intents on Android 11+ (API 30+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:mimeType="application/pdf" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:mimeType="text/csv" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        </intent>
+    </queries>
     <!--
     This manifest file is used only by Gradle to configure debug-only capabilities
     for React Native Apps.

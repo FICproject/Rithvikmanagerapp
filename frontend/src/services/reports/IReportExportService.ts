@@ -17,11 +17,13 @@ export interface ExportFilterParams {
 export interface ExportResult {
   success: boolean;
   filePath?: string;
+  displayPath?: string;
   downloadUrl?: string;
   fileName: string;
   mimeType: string;
   recordCount: number;
   periodLabel: string;
+  fileSize?: number;
   blobUrl?: string;
   fileContent?: string;
 }
@@ -34,9 +36,10 @@ export interface IReportExportService {
 
   generateReportFile(
     records: VisitRecord[],
-    params: ExportFilterParams
+    params: ExportFilterParams,
+    onProgressUpdate?: (status: string) => void
   ): Promise<ExportResult>;
 
-  openFile(result: ExportResult): Promise<void>;
+  openFile(result: ExportResult): Promise<{ success: boolean; message?: string }>;
   shareFile(result: ExportResult): Promise<void>;
 }

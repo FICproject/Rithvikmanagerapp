@@ -14,5 +14,12 @@
     "mobile:test": "npm --prefix frontend run test",
     "backend:start": "node backend/server.js",
     "build:apk": "npm --prefix frontend run build:apk"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3",
+    "pdfkit": "^0.20.2",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
+    "xlsx": "^0.18.5"
   }
 }

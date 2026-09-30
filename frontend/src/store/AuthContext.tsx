@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Manager } from '../types';
 import { authService, AuthLoginResult } from '../services/auth/AuthService';
 import { pushNotificationService } from '../services/push/PushNotificationService';
+import { socketService } from '../services/realtime/SocketService';
+import { services } from '../services';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -27,9 +29,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const bootstrap = async () => {
       try {
         const currentManager = await authService.getCurrentManager();
+        const authToken = await services.storageService.getAuthToken();
         if (currentManager) {
           setManager(currentManager);
+          setToken(authToken || null);
           setIsAuthenticated(true);
+
+          if (authToken) {
+            socketService.connect(authToken, {
+              managerId: currentManager.id,
+              role: currentManager.role,
+              stateId: currentManager.stateId,
+              districtId: currentManager.districtId,
+              divisionId: currentManager.divisionId,
+              pincodeId: currentManager.pincodeId,
+            });
+          }
+
           // Register FCM token for current authenticated manager
           pushNotificationService.registerDeviceToken(currentManager.id, currentManager.role, {
             state: currentManager.state,
@@ -57,6 +73,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setToken(result.token);
         setManager(result.manager);
         setIsAuthenticated(true);
+
+        socketService.connect(result.token, {
+          managerId: result.manager.id,
+          role: result.manager.role,
+          stateId: result.manager.stateId,
+          districtId: result.manager.districtId,
+          divisionId: result.manager.divisionId,
+          pincodeId: result.manager.pincodeId,
+        });
+
         // Register FCM device token on login
         pushNotificationService.registerDeviceToken(result.manager.id, result.manager.role, {
           state: result.manager.state,
@@ -84,6 +110,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      socketService.disconnect();
       if (manager) {
         await pushNotificationService.deactivateDeviceToken(manager.id).catch(err => {
           console.warn('FCM token deactivation error on logout:', err);

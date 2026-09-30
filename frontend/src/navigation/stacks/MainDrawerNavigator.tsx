@@ -272,6 +272,7 @@ export const MainDrawerNavigator: React.FC = () => {
       case 'DailyReport':
         return (
           <DailyReportScreen
+            initialVendorId={routeParams?.vendorId}
             onOpenDrawer={() => setIsDrawerOpen(true)}
             onNavigateRoute={handleNavigate}
           />

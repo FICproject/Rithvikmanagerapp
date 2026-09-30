@@ -215,7 +215,7 @@ export const SubordinateReportsScreen: React.FC<SubordinateReportsScreenProps> =
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader
         title="Subordinate Reports"

@@ -17,6 +17,8 @@ import { services } from '../../services';
 import { VendorCategory, VendorStatus } from '../../types';
 import { maskBankAccount, maskGSTIN, maskPAN } from '../../utils/masking';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
+import { FICHeader } from '../../components/ui/FICHeader';
+import { theme } from '../../theme';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
 import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
 import { FICOperatingHoursModal } from '../../components/ui/FICOperatingHoursModal';
@@ -51,13 +53,15 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 }) => {
   const { manager } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
-  const [exceptionModalData, setExceptionModalData] = useState<{ visible: boolean; businessName: string }>({
+  const [exceptionModalData, setExceptionModalData] = useState<{ visible: boolean; businessName: string; message?: string }>({
     visible: false,
     businessName: '',
+    message: '',
   });
-  const [successModalData, setSuccessModalData] = useState<{ visible: boolean; businessName: string }>({
+  const [successModalData, setSuccessModalData] = useState<{ visible: boolean; businessName: string; createdVendorId?: string }>({
     visible: false,
     businessName: '',
+    createdVendorId: undefined,
   });
 
   // --- Step 1: Decision & Business Profile ---
@@ -66,6 +70,11 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   const [isRecordingVoice, setIsRecordingVoice] = useState<boolean>(false);
   const [recordedVoiceUri, setRecordedVoiceUri] = useState<string | null>(null);
   const [voiceDurationSeconds, setVoiceDurationSeconds] = useState<number>(0);
+  const [voiceFileName, setVoiceFileName] = useState<string | null>(null);
+  const [voiceFileSize, setVoiceFileSize] = useState<number | null>(null);
+  const [voiceMimeType, setVoiceMimeType] = useState<string | null>(null);
+  const [voiceAudioSource, setVoiceAudioSource] = useState<'RECORDED' | 'UPLOADED'>('RECORDED');
+  const [uploadStatusText, setUploadStatusText] = useState<string | null>(null);
 
   const [businessName, setBusinessName] = useState(initialBusinessName || '');
   const [logoAttached, setLogoAttached] = useState(false);
@@ -74,6 +83,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
   const [operatingHours, setOperatingHours] = useState('');
   const [businessDescription, setBusinessDescription] = useState('');
 
@@ -176,6 +186,46 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
       const districtId = manager?.districtId || 'dt-chn-01';
       const divisionId = manager?.divisionId || 'div-central-01';
 
+      let uploadSuccessMessage = '';
+
+      // Real Multipart Backend Upload of Voice Note
+      if (recordedVoiceUri) {
+        setUploadStatusText('Uploading... 0%');
+        try {
+          const uploadResult = await services.mediaUploadService.submitVisitExceptionReport(
+            {
+              businessName: businessName.trim(),
+              vendorName: ownerName.trim() || 'Prospective Merchant',
+              category: category || 'General',
+              reason: notInterestedReason.trim() || 'Voice exception report attached',
+              managerId: manager?.id || 'mgr-000',
+              audioUri: recordedVoiceUri,
+              audioFileName: voiceFileName || (recordedVoiceUri.split('/').pop() || 'voice_note.m4a'),
+              audioMimeType: voiceMimeType || 'audio/m4a',
+              audioFileSize: voiceFileSize,
+            },
+            (percent) => {
+              setUploadStatusText(`Uploading... ${percent}%`);
+            }
+          );
+          setUploadStatusText('Upload complete');
+          uploadSuccessMessage = uploadResult.message || 'Voice note uploaded successfully';
+        } catch (uploadErr) {
+          console.warn('Backend upload failed or offline, queuing in offlineQueueService:', uploadErr);
+          await services.offlineQueueService.enqueue('SUBMIT_DAILY_REPORT', {
+            type: 'VISIT_EXCEPTION_REPORT',
+            businessName: businessName.trim(),
+            vendorName: ownerName.trim() || 'Prospective Merchant',
+            reason: notInterestedReason.trim() || 'Voice exception report attached',
+            audioUri: recordedVoiceUri,
+            audioFileName: voiceFileName,
+            audioMimeType: voiceMimeType,
+            managerId: manager?.id || 'mgr-000',
+          });
+          uploadSuccessMessage = 'Saved offline — will upload when connection is restored.';
+        }
+      }
+
       // Create merchant entry as NOT_INTERESTED
       const created = await services.vendorRepository.createVendor({
         businessName: businessName.trim(),
@@ -188,9 +238,17 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
         stateId,
         districtId,
         divisionId,
-        pincodeId: '636701',
+        pincodeId: pincode.trim() || '636701',
         status: VendorStatus.NOT_INTERESTED,
         createdById: manager?.id || 'mgr-000',
+      });
+
+      // Auto-record visit into Field Visit Reports & Daily Report Queue
+      await services.fieldVisitService.recordVendorAdded({
+        vendor: created,
+        manager,
+        isInterested: false,
+        reason: notInterestedReason.trim() || (recordedVoiceUri ? 'Voice exception report attached' : 'Declined interest'),
       });
 
       // Record visit / exception note
@@ -209,17 +267,21 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
         stateId,
         districtId,
         divisionId,
-        pincodeId: '636701',
+        pincodeId: pincode.trim() || '636701',
       });
 
       setExceptionModalData({
         visible: true,
         businessName: created.businessName,
+        message: uploadSuccessMessage
+          ? `${uploadSuccessMessage}. Declined interest report for "${created.businessName}" has been logged and sent to your supervisor.`
+          : undefined,
       });
     } catch {
       Alert.alert('Offline Saved', 'Report saved locally. It will sync automatically when network is restored.');
     } finally {
       setIsSubmitting(false);
+      setUploadStatusText(null);
     }
   };
 
@@ -248,6 +310,10 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
       }
       if (!address.trim()) {
         Alert.alert('Validation Error', 'Please enter Business Address.');
+        return;
+      }
+      if (!pincode.trim() || pincode.trim().length !== 6) {
+        Alert.alert('Validation Error', 'Please enter a valid 6-digit Business Pincode.');
         return;
       }
       if (!operatingHours.trim()) {
@@ -330,19 +396,30 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
         address: address.trim(),
         operatingHours: operatingHours.trim() || undefined,
         website: website.trim() || undefined,
-        description: businessDescription.trim() || undefined,
+        shopPhotoUrl: uploadedLogoUrl || logoImageUri || undefined,
         logoUrl: uploadedLogoUrl || logoImageUri || undefined,
         licenseUrl: uploadedLicenseUrl || licenseImageUri || undefined,
+        kycUrl: kycImageUri || undefined,
+        panUrl: panImageUri || undefined,
+        aadhaarUrl: aadhaarImageUri || undefined,
         stateId,
         districtId,
         divisionId,
-        pincodeId: '636701',
+        pincodeId: pincode.trim() || '636701',
         status: VendorStatus.ONBOARDED,
         createdById: manager?.id || 'mgr-000',
         gstNumber: gstNumber.trim() || undefined,
       };
 
       const created = await services.vendorRepository.createVendor(payload);
+
+      // Auto-record visit into Field Visit Reports & Daily Report Queue
+      await services.fieldVisitService.recordVendorAdded({
+        vendor: created,
+        manager,
+        isInterested: true,
+        photoUrl: uploadedLogoUrl || logoImageUri || undefined,
+      });
 
       // Auto-log activity
       await services.activityRepository.logActivity({
@@ -353,10 +430,10 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
         stateId,
         districtId,
         divisionId,
-        pincodeId: '636701',
+        pincodeId: pincode.trim() || '636701',
       });
 
-      setSuccessModalData({ visible: true, businessName: created.businessName });
+      setSuccessModalData({ visible: true, businessName: created.businessName, createdVendorId: created.id });
     } catch {
       Alert.alert('Saved Offline', 'Merchant details saved locally. Will synchronize once connected.');
     } finally {
@@ -374,18 +451,12 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFDF0" barStyle="dark-content" />
-
-      {/* Screen Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.headerTitles}>
-          <Text style={styles.mainTitle}>Vendor Onboarding</Text>
-          <Text style={styles.mainSubtitle}>Register and onboard a new business within your assigned scope</Text>
-        </View>
-        <TouchableOpacity style={styles.closeButton} onPress={onBack} activeOpacity={0.7}>
-          <Icon name="close" size={20} color="#64748B" />
-        </TouchableOpacity>
-      </View>
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+      <FICHeader
+        title="Vendor Onboarding"
+        leftActionIcon={<Text style={styles.headerIcon}>←</Text>}
+        onLeftAction={onBack}
+      />
 
       {/* Stepper Bar */}
       <View style={styles.stepperWrapper}>
@@ -552,18 +623,36 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   subtitle="Record audio explaining why merchant declined interest. You can talk into mic and listen back."
                   recordedAudioUri={recordedVoiceUri}
                   audioDurationSeconds={voiceDurationSeconds}
+                  audioSource={voiceAudioSource}
+                  fileName={voiceFileName || undefined}
+                  fileSize={voiceFileSize || undefined}
                   onStartRecording={() => setIsRecordingVoice(true)}
-                  onStopRecording={(uri, durationSecs) => {
+                  onStopRecording={(uri, durationSecs, source, fName, fSize, fMime) => {
                     setRecordedVoiceUri(uri);
                     setVoiceDurationSeconds(durationSecs);
+                    setVoiceAudioSource(source);
+                    setVoiceFileName(fName || null);
+                    setVoiceFileSize(fSize || null);
+                    setVoiceMimeType(fMime || null);
                     setIsRecordingVoice(false);
                   }}
                   onDeleteRecording={() => {
                     setRecordedVoiceUri(null);
                     setVoiceDurationSeconds(0);
+                    setVoiceFileName(null);
+                    setVoiceFileSize(null);
+                    setVoiceMimeType(null);
                     setIsRecordingVoice(false);
                   }}
                 />
+
+                {uploadStatusText ? (
+                  <View style={{ marginTop: 10, padding: 10, backgroundColor: '#EFF6FF', borderRadius: 8, alignItems: 'center' }}>
+                    <Text style={{ fontSize: 13, color: '#1D4ED8', fontWeight: '600' }}>
+                      {uploadStatusText}
+                    </Text>
+                  </View>
+                ) : null}
 
                 <TouchableOpacity
                   style={styles.submitExceptionBtn}
@@ -572,7 +661,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   activeOpacity={0.85}
                 >
                   <Text style={styles.submitExceptionBtnText}>
-                    {isSubmitting ? 'Submitting Report...' : 'Submit Visit Exception Report →'}
+                    {isSubmitting ? (uploadStatusText || 'Submitting Report...') : 'Submit Visit Exception Report →'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -678,6 +767,17 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                     placeholder="Street, Area, City"
                     value={address}
                     onChangeText={setAddress}
+                  />
+                </View>
+
+                <Text style={styles.fieldLabel}>Business Pincode *</Text>
+                <View style={[styles.inputContainer, { marginBottom: 12 }]}>
+                  <TextInputWrapper
+                    placeholder="6-digit postal pincode (e.g. 636701)"
+                    value={pincode}
+                    onChangeText={text => setPincode(text.replace(/[^0-9]/g, '').slice(0, 6))}
+                    keyboardType="number-pad"
+                    maxLength={6}
                   />
                 </View>
 
@@ -1116,6 +1216,10 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                   <Text style={styles.reviewVal}>{address || 'Not provided'}</Text>
                 </View>
                 <View style={styles.reviewGridItem}>
+                  <Text style={styles.reviewKey}>PINCODE</Text>
+                  <Text style={styles.reviewVal}>{pincode || 'Not provided'}</Text>
+                </View>
+                <View style={styles.reviewGridItem}>
                   <Text style={styles.reviewKey}>WEBSITE</Text>
                   <Text style={styles.reviewVal}>{website || 'Not provided'}</Text>
                 </View>
@@ -1131,7 +1235,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                     Tamil Nadu (TN) • Dharmapuri • Harur Revenue Division
                   </Text>
                   <Text style={styles.verifiedBadge}>
-                    📮 PIN: 635305 (Attur H.O) • ✓ India Post & Revenue Verified
+                    📮 PIN: {pincode || '636701'} • ✓ India Post & Revenue Verified
                   </Text>
                 </View>
               </View>
@@ -1323,11 +1427,27 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
               </View>
             </View>
 
+            {/* Direct Option to Add to Manager's Daily Report */}
             <TouchableOpacity
-              style={styles.successModalBtn}
+              style={styles.dailyReportModalBtn}
               activeOpacity={0.85}
               onPress={() => {
-                setSuccessModalData({ visible: false, businessName: '' });
+                const targetVendorId = successModalData.createdVendorId;
+                setSuccessModalData({ visible: false, businessName: '', createdVendorId: undefined });
+                if (onNavigateRoute) {
+                  onNavigateRoute('DailyReport', { vendorId: targetVendorId });
+                }
+              }}
+            >
+              <Icon name="clipboard-text-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.dailyReportModalBtnText}>ADD TO DAILY REPORT</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.secondaryModalBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                setSuccessModalData({ visible: false, businessName: '', createdVendorId: undefined });
                 if (onNavigateRoute) {
                   onNavigateRoute('Vendors');
                 } else {
@@ -1335,7 +1455,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
                 }
               }}
             >
-              <Text style={styles.successModalBtnText}>VIEW MERCHANT DIRECTORY</Text>
+              <Text style={styles.secondaryModalBtnText}>VIEW MERCHANT DIRECTORY</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1357,7 +1477,7 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
             <Text style={styles.exceptionModalTitle}>Exception Report Submitted</Text>
 
             <Text style={styles.exceptionModalBody}>
-              Declined interest report for "{exceptionModalData.businessName}" has been logged and sent to your supervisor.
+              {exceptionModalData.message || `Declined interest report for "${exceptionModalData.businessName}" has been logged and sent to your supervisor.`}
             </Text>
 
             <TouchableOpacity
@@ -1519,6 +1639,7 @@ const TextInputWrapper: React.FC<{
   secureTextEntry?: boolean;
   multiline?: boolean;
   numberOfLines?: number;
+  maxLength?: number;
   style?: any;
 }> = ({
   placeholder,
@@ -1529,6 +1650,7 @@ const TextInputWrapper: React.FC<{
   secureTextEntry,
   multiline,
   numberOfLines,
+  maxLength,
   style,
 }) => {
   const { TextInput } = require('react-native');
@@ -1543,6 +1665,7 @@ const TextInputWrapper: React.FC<{
       secureTextEntry={secureTextEntry}
       multiline={multiline}
       numberOfLines={numberOfLines}
+      maxLength={maxLength}
       style={[
         {
           flex: 1,
@@ -1561,6 +1684,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFDF0',
+  },
+  headerIcon: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   topHeader: {
     flexDirection: 'row',
@@ -2319,6 +2447,39 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  dailyReportModalBtn: {
+    width: '100%',
+    backgroundColor: '#1D4ED8',
+    paddingVertical: 14,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  dailyReportModalBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  secondaryModalBtn: {
+    width: '100%',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryModalBtnText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
 });

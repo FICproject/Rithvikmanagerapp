@@ -15,9 +15,13 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
 import { services } from '../../services';
 import { Vendor, VendorStatus } from '../../types';
+import { FICHeader } from '../../components/ui/FICHeader';
+import { theme } from '../../theme';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
+import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
+import { socketService } from '../../services/realtime/SocketService';
 import { VENDOR_ASSETS } from '../../assets/vendors';
 import { maskGSTIN, maskPAN, maskBankAccount } from '../../utils/masking';
 
@@ -71,6 +75,23 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
     fetchVendor();
   }, [fetchVendor]);
 
+  useEffect(() => {
+    const unsub1 = socketService.subscribe<Vendor>('vendor.updated', (payload) => {
+      if (vendor && payload.entityId === vendor.id && payload.data) {
+        setVendor((prev) => (prev ? ({ ...prev, ...payload.data } as Vendor) : (payload.data || null)));
+      }
+    });
+    const unsub2 = socketService.subscribe<Vendor>('vendor.location.updated', (payload) => {
+      if (vendor && payload.entityId === vendor.id && payload.data) {
+        setVendor((prev) => (prev ? ({ ...prev, ...payload.data } as Vendor) : (payload.data || null)));
+      }
+    });
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, [vendor]);
+
   const handleCall = () => {
     if (vendor?.phone) {
       Linking.openURL(`tel:${vendor.phone}`).catch(() => {
@@ -100,6 +121,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
 
   const handleCreateReport = () => {
     if (onNavigateRoute && vendor) {
+      services.fieldVisitService.addPendingDailyReportVendor(vendor);
       onNavigateRoute('DailyReport', { vendorId: vendor.id });
     }
   };
@@ -131,7 +153,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         { text: 'View on Google Maps', onPress: handleOpenMap },
         { text: 'Log Field Visit', onPress: handleLogVisit },
         { text: 'Report New Issue', onPress: handleAddIssue },
-        { text: 'Create Daily Report', onPress: handleCreateReport },
+        { text: 'Add to Daily Report', onPress: handleCreateReport },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
@@ -187,39 +209,29 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
 
   const statusInfo = getStatusBadge();
 
-  const imageSource =
-    vendor.imageKey && VENDOR_ASSETS[vendor.imageKey]
-      ? VENDOR_ASSETS[vendor.imageKey]
-      : VENDOR_ASSETS.abc_traders;
+  const getVendorImageSource = () => {
+    const customPhoto = vendor.shopPhotoUrl || vendor.logoUrl || (vendor as any).photoUrl || (vendor as any).imageUri || (vendor as any).storefrontPhotoUri;
+    if (customPhoto) {
+      return { uri: customPhoto };
+    }
+    if (vendor.imageKey && VENDOR_ASSETS[vendor.imageKey]) {
+      return VENDOR_ASSETS[vendor.imageKey];
+    }
+    return VENDOR_ASSETS.abc_traders;
+  };
+
+  const imageSource = getVendorImageSource();
 
   const tabs: TabType[] = ['Overview', 'Activity', 'Issues', 'Outlets'];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-      {/* TOP HEADER */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={onBack}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="chevron-left" size={28} color="#0F172A" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Vendor Details</Text>
-
-        <TouchableOpacity
-          style={styles.headerIconButton}
-          onPress={handleMoreOptions}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="dots-horizontal" size={24} color="#2563EB" />
-        </TouchableOpacity>
-      </View>
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+      <FICHeader
+        title="Vendor Details"
+        leftActionIcon={<Text style={styles.headerIcon}>←</Text>}
+        onLeftAction={onBack}
+      />
 
       <ScrollView
         style={styles.container}
@@ -267,6 +279,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 style={styles.quickActionButton}
                 onPress={handleCall}
                 activeOpacity={0.7}
+                accessibilityLabel="Call Vendor"
               >
                 <Icon name="phone" size={18} color="#2563EB" />
               </TouchableOpacity>
@@ -275,8 +288,18 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                 style={styles.quickActionButton}
                 onPress={handleOpenMap}
                 activeOpacity={0.7}
+                accessibilityLabel="Navigate to Vendor"
               >
                 <Icon name="navigation" size={18} color="#2563EB" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.quickActionButton, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}
+                onPress={handleCreateReport}
+                activeOpacity={0.7}
+                accessibilityLabel="Add to Daily Report"
+              >
+                <Icon name="clipboard-text-outline" size={18} color="#1D4ED8" />
               </TouchableOpacity>
             </View>
           </View>
@@ -407,6 +430,16 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   </View>
                 </View>
               </View>
+
+              {/* Compact Secondary Call & Navigate Action Buttons */}
+              <FieldActionButtons
+                phoneNumber={vendor.phone}
+                latitude={vendor.latitude}
+                longitude={vendor.longitude}
+                titleOrLabel={vendor.businessName || vendor.name}
+                address={vendor.address}
+                style={{ marginTop: 14 }}
+              />
             </View>
 
             {/* SECTION 2: BUSINESS DETAILS */}
@@ -472,7 +505,8 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                   </View>
 
                   <Text style={styles.addressText}>
-                    {vendor.address || '123, Main Road, Dharmapuri,\nTamil Nadu - 636701'}
+                    {vendor.address || '123, Main Road, Dharmapuri, Tamil Nadu'}
+                    {vendor.pincodeId ? `\nPIN: ${vendor.pincodeId}` : ''}
                   </Text>
                 </View>
 
@@ -902,7 +936,7 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
           { label: 'This Year', value: 'This Year' },
         ]}
         selectedValue={selectedPeriod}
-        onSelect={val => setSelectedPeriod(val)}
+        onSelect={(val: string) => setSelectedPeriod(val)}
         onClose={() => setShowPeriodModal(false)}
       />
     </SafeAreaView>
@@ -913,6 +947,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  headerIcon: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   topHeader: {
     height: 56,

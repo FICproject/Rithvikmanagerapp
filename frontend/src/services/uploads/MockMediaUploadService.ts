@@ -1,7 +1,12 @@
 /**
  * Mock Media Upload Service Implementation
  */
-import { IMediaUploadService, UploadProgressCallback } from './IMediaUploadService';
+import {
+  IMediaUploadService,
+  UploadProgressCallback,
+  VisitExceptionReportPayload,
+  VisitExceptionReportResult,
+} from './IMediaUploadService';
 
 export class MockMediaUploadService implements IMediaUploadService {
   async uploadAudioReport(
@@ -9,10 +14,24 @@ export class MockMediaUploadService implements IMediaUploadService {
     onProgress?: UploadProgressCallback
   ): Promise<string> {
     if (onProgress) {
-      onProgress(50);
       onProgress(100);
     }
-    return `https://storage.forgeindia.in/audio/reports/${Date.now()}.m4a`;
+    return filePath;
+  }
+
+  async submitVisitExceptionReport(
+    payload: VisitExceptionReportPayload,
+    onProgress?: UploadProgressCallback
+  ): Promise<VisitExceptionReportResult> {
+    if (onProgress) {
+      onProgress(100);
+    }
+    return {
+      success: true,
+      reportId: `exc-${Date.now()}`,
+      audioUrl: payload.audioUri || null,
+      message: 'Visit exception report submitted',
+    };
   }
 
   async uploadShopPhoto(
@@ -20,9 +39,8 @@ export class MockMediaUploadService implements IMediaUploadService {
     onProgress?: UploadProgressCallback
   ): Promise<string> {
     if (onProgress) {
-      onProgress(50);
       onProgress(100);
     }
-    return localUri || `file:///data/user/0/com.ficmanager/cache/photo_${Date.now()}.jpg`;
+    return localUri;
   }
 }

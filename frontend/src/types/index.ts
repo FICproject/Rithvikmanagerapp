@@ -66,6 +66,7 @@ export enum VendorStatus {
 
 export interface Vendor {
   id: string;
+  name?: string;
   businessName: string;
   vendorName: string;
   phone: string;
@@ -73,11 +74,18 @@ export interface Vendor {
   category: VendorCategory;
   businessType: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   stateId: string;
   districtId: string;
   divisionId: string;
   pincodeId: string;
   shopPhotoUrl?: string;
+  logoUrl?: string;
+  licenseUrl?: string;
+  kycUrl?: string;
+  panUrl?: string;
+  aadhaarUrl?: string;
   documentUrls?: string[];
   status: VendorStatus;
   subcategory?: string;
@@ -119,6 +127,15 @@ export interface Task {
   priority: Priority;
   assignedManagerId: string;
   status: TaskStatus;
+  contactName?: string;
+  contactPhone?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  pincodeId?: string;
+  divisionId?: string;
+  districtId?: string;
+  stateId?: string;
   rejectionReason?: string;
   dueSla?: string;
   assignedBy?: string;
@@ -127,6 +144,12 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  beforePhotoUrl?: string;
+  beforePhotoTimestamp?: string;
+  beforePhotoLocation?: string;
+  afterPhotoUrl?: string;
+  afterPhotoTimestamp?: string;
+  afterPhotoLocation?: string;
 }
 
 export type VendorWorkflowStage =
@@ -167,6 +190,15 @@ export interface Issue {
   description: string;
   priority: Priority;
   assignedManagerId: string;
+  contactName?: string;
+  contactPhone?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  pincodeId?: string;
+  divisionId?: string;
+  districtId?: string;
+  stateId?: string;
   vendorId?: string;
   vendorName?: string;
   location?: string;

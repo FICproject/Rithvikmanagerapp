@@ -1,20 +1,24 @@
 /**
  * Real Microphone Audio Recorder Service Implementation
+ * Integrates with Android NativeAudioModule (MediaRecorder & MediaPlayer)
  */
-import { AudioRecordingResult, IAudioRecorderService, PermissionStatus } from './IAudioRecorderService';
+import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
+import {
+  AudioRecordingResult,
+  IAudioRecorderService,
+  PermissionStatus,
+} from './IAudioRecorderService';
+
+const { NativeAudio } = NativeModules;
 
 export class MockAudioRecorderService implements IAudioRecorderService {
   private recordingState: boolean = false;
   private startTime: number = 0;
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioChunks: Blob[] = [];
-  private mediaStream: MediaStream | null = null;
+  private lastRecordedPath: string = '';
 
   async requestMicrophonePermission(): Promise<PermissionStatus> {
-    try {
-      const RN = require('react-native');
-      if (RN && RN.Platform && RN.Platform.OS === 'android') {
-        const { PermissionsAndroid } = RN;
+    if (Platform.OS === 'android') {
+      try {
         const hasPermission = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
         );
@@ -30,7 +34,7 @@ export class MockAudioRecorderService implements IAudioRecorderService {
               'FIC Manager requires access to your microphone to record audio voice notes for field visit reports.',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            buttonPositive: 'Allow',
           }
         );
 
@@ -41,25 +45,13 @@ export class MockAudioRecorderService implements IAudioRecorderService {
         } else {
           return 'DENIED';
         }
+      } catch (e) {
+        console.warn('Microphone permission check error:', e);
       }
-    } catch (e) {
-      // Non-RN or test environment
-    }
-
-    try {
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-        return 'GRANTED';
-      }
-    } catch (e) {
-      console.warn('Microphone permission check error:', e);
-      return 'DENIED';
     }
 
     return 'GRANTED';
   }
-
 
   async startRecording(): Promise<void> {
     if (this.recordingState) {
@@ -73,78 +65,140 @@ export class MockAudioRecorderService implements IAudioRecorderService {
 
     this.recordingState = true;
     this.startTime = Date.now();
-    this.audioChunks = [];
 
-    try {
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const MediaRecorderClass = (window as unknown as { MediaRecorder: typeof MediaRecorder }).MediaRecorder;
-        if (MediaRecorderClass) {
-          this.mediaRecorder = new MediaRecorderClass(this.mediaStream);
-          this.mediaRecorder.ondataavailable = (event: BlobEvent) => {
-            if (event.data && event.data.size > 0) {
-              this.audioChunks.push(event.data);
-            }
-          };
-          this.mediaRecorder.start(100);
-        }
+    if (NativeAudio && typeof NativeAudio.startRecording === 'function') {
+      try {
+        const path = await NativeAudio.startRecording();
+        this.lastRecordedPath = path;
+        return;
+      } catch (e) {
+        console.warn('NativeAudio.startRecording failed:', e);
+        this.recordingState = false;
+        throw e;
       }
-    } catch (e) {
-      console.log('Native microphone recording session engaged:', e);
     }
   }
 
+  async getRecordingStatus(): Promise<{ isRecording: boolean; elapsedSeconds: number; amplitude: number }> {
+    if (NativeAudio && typeof NativeAudio.getRecordingStatus === 'function') {
+      try {
+        return await NativeAudio.getRecordingStatus();
+      } catch (e) {}
+    }
+    const elapsed = this.recordingState ? Math.max(0, Math.round((Date.now() - this.startTime) / 1000)) : 0;
+    return { isRecording: this.recordingState, elapsedSeconds: elapsed, amplitude: 0 };
+  }
+
   async stopRecording(): Promise<AudioRecordingResult> {
-    const duration = Math.max(1, Math.round((Date.now() - this.startTime) / 1000));
+    const elapsed = Math.max(1, Math.round((Date.now() - this.startTime) / 1000));
     this.recordingState = false;
 
-    let finalPath = `real_mic_rec_${Date.now()}.m4a`;
-
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+    if (NativeAudio && typeof NativeAudio.stopRecording === 'function') {
       try {
-        this.mediaRecorder.stop();
-        if (this.audioChunks.length > 0) {
-          const blob = new Blob(this.audioChunks, { type: 'audio/m4a' });
-          finalPath = URL.createObjectURL(blob);
-        }
+        const res = await NativeAudio.stopRecording();
+        const finalPath = res.filePath || this.lastRecordedPath;
+        const duration = res.durationSeconds || elapsed;
+
+        return {
+          filePath: finalPath,
+          durationSeconds: duration,
+          mimeType: res.mimeType || 'audio/m4a',
+          source: 'RECORDED',
+          fileName: res.fileName || finalPath.split('/').pop() || 'voice_note.m4a',
+          fileSize: res.fileSize || 0,
+        };
       } catch (e) {
-        console.warn('MediaRecorder stop warning:', e);
+        console.warn('NativeAudio.stopRecording failed:', e);
+        throw e;
       }
     }
 
-    await this.releaseMicrophone();
-
-    return {
-      filePath: finalPath,
-      durationSeconds: duration,
-      mimeType: 'audio/m4a',
-      source: 'RECORDED',
-    };
+    throw new Error('Native audio recorder is not available on this platform.');
   }
 
   async cancelRecording(): Promise<void> {
     this.recordingState = false;
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+    if (NativeAudio && typeof NativeAudio.stopRecording === 'function') {
       try {
-        this.mediaRecorder.stop();
+        await NativeAudio.stopRecording();
       } catch (e) {}
     }
-    await this.releaseMicrophone();
   }
 
   async releaseMicrophone(): Promise<void> {
-    if (this.mediaStream) {
-      try {
-        this.mediaStream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
-      } catch (e) {}
-      this.mediaStream = null;
-    }
-    this.mediaRecorder = null;
     this.recordingState = false;
   }
 
   isRecording(): boolean {
     return this.recordingState;
   }
-}
 
+  async pickAudioFile(): Promise<AudioRecordingResult | null> {
+    if (NativeAudio && typeof NativeAudio.pickAudioFile === 'function') {
+      try {
+        const res = await NativeAudio.pickAudioFile();
+        if (!res) {
+          return null; // User cancelled
+        }
+        return {
+          filePath: res.filePath,
+          fileName: res.fileName,
+          fileSize: res.fileSize,
+          mimeType: res.mimeType || 'audio/m4a',
+          durationSeconds: res.durationSeconds || 0,
+          source: 'UPLOADED',
+        };
+      } catch (e) {
+        console.warn('NativeAudio.pickAudioFile error:', e);
+        throw e;
+      }
+    }
+    return null;
+  }
+
+  async startPlayback(filePath: string): Promise<{ duration: number }> {
+    if (NativeAudio && typeof NativeAudio.startPlayback === 'function') {
+      try {
+        const res = await NativeAudio.startPlayback(filePath);
+        return { duration: res?.duration || 0 };
+      } catch (e) {
+        console.warn('NativeAudio.startPlayback error:', e);
+        throw e;
+      }
+    }
+    throw new Error('Native audio player is not available on this platform.');
+  }
+
+  async pausePlayback(): Promise<void> {
+    if (NativeAudio && typeof NativeAudio.pausePlayback === 'function') {
+      try {
+        await NativeAudio.pausePlayback();
+      } catch (e) {}
+    }
+  }
+
+  async resumePlayback(): Promise<void> {
+    if (NativeAudio && typeof NativeAudio.resumePlayback === 'function') {
+      try {
+        await NativeAudio.resumePlayback();
+      } catch (e) {}
+    }
+  }
+
+  async stopPlayback(): Promise<void> {
+    if (NativeAudio && typeof NativeAudio.stopPlayback === 'function') {
+      try {
+        await NativeAudio.stopPlayback();
+      } catch (e) {}
+    }
+  }
+
+  async getPlaybackStatus(): Promise<{ isPlaying: boolean; currentPosition: number; duration: number }> {
+    if (NativeAudio && typeof NativeAudio.getPlaybackStatus === 'function') {
+      try {
+        return await NativeAudio.getPlaybackStatus();
+      } catch (e) {}
+    }
+    return { isPlaying: false, currentPosition: 0, duration: 0 };
+  }
+}

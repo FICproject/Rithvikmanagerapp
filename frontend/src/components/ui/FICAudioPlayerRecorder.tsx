@@ -7,9 +7,15 @@ import {
   Animated,
   Alert,
   Linking,
+  NativeModules,
+  NativeEventEmitter,
+  DeviceEventEmitter,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { services } from '../../services';
+
+const { NativeAudio } = NativeModules;
 
 export interface FICAudioPlayerRecorderProps {
   title?: string;
@@ -17,40 +23,48 @@ export interface FICAudioPlayerRecorderProps {
   recordedAudioUri: string | null;
   audioDurationSeconds: number;
   audioSource?: 'RECORDED' | 'UPLOADED';
+  fileName?: string;
+  fileSize?: number;
   onStartRecording?: () => void;
   onStopRecording?: (
     uri: string,
     duration: number,
     source: 'RECORDED' | 'UPLOADED',
-    fileName?: string
+    fileName?: string,
+    fileSize?: number,
+    mimeType?: string
   ) => void;
   onDeleteRecording?: () => void;
 }
 
 export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
-  title = '🎙️ Voice Note / Audio Recording',
-  subtitle = 'Record a voice message explaining merchant interaction or field observation.',
+  title = '🎙️ Voice Note / Audio Explanation',
+  subtitle = 'Record audio explaining why merchant declined interest. You can talk into mic and listen back.',
   recordedAudioUri: initialAudioUri,
   audioDurationSeconds: initialDuration,
   audioSource: initialSource = 'RECORDED',
+  fileName: initialFileName,
+  fileSize: initialFileSize,
   onStartRecording,
   onStopRecording,
   onDeleteRecording,
 }) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
   const [audioUri, setAudioUri] = useState<string | null>(initialAudioUri || null);
   const [audioSource, setAudioSource] = useState<'RECORDED' | 'UPLOADED'>(initialSource);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string | null>(initialFileName || null);
+  const [currentFileSize, setCurrentFileSize] = useState<number | null>(initialFileSize || null);
   const [duration, setDuration] = useState<number>(initialDuration || 0);
   const [playbackSeconds, setPlaybackSeconds] = useState<number>(0);
+  const [liveAmplitude, setLiveAmplitude] = useState<number>(0);
 
-  // Audio elements & animation refs
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Recording timer
+  // Recording status timer
   const [recTimer, setRecTimer] = useState<number>(0);
   const recIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -61,26 +75,64 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
     if (initialDuration) {
       setDuration(initialDuration);
     }
-  }, [initialAudioUri, initialDuration]);
+    if (initialFileName) {
+      setCurrentFileName(initialFileName);
+    }
+    if (initialFileSize) {
+      setCurrentFileSize(initialFileSize);
+    }
+  }, [initialAudioUri, initialDuration, initialFileName, initialFileSize]);
 
-  // Clean unmount effect to release microphone stream
+  // Listen for native playback events
   useEffect(() => {
+    // On Android, NativeAudioModule emits directly to DeviceEventEmitter via RCTDeviceEventEmitter.
+    // This avoids NativeEventEmitter warnings when addListener/removeListeners are not present.
+    const emitter =
+      Platform.OS === 'android'
+        ? DeviceEventEmitter
+        : NativeAudio && typeof (NativeAudio as any).addListener === 'function'
+        ? new NativeEventEmitter(NativeAudio)
+        : null;
+
+    if (!emitter) return;
+
+    const endSub = emitter.addListener('onPlaybackEnded', () => {
+      setIsPlaying(false);
+      setIsPaused(false);
+      setPlaybackSeconds(0);
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+    });
+    const errSub = emitter.addListener('onPlaybackError', () => {
+      setIsPlaying(false);
+      setIsPaused(false);
+      setPlaybackSeconds(0);
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+      Alert.alert('Playback Error', 'Error playing audio file through speaker.');
+    });
     return () => {
-      if (recIntervalRef.current) {
-        clearInterval(recIntervalRef.current);
-      }
-      if (audioElementRef.current) {
-        try {
-          audioElementRef.current.pause();
-        } catch (e) {}
-      }
-      services.audioRecorderService.releaseMicrophone();
+      endSub.remove();
+      errSub.remove();
     };
   }, []);
 
-  // Handle Real Microphone Recording with Permissions
+  // Clean unmount effect to release recorder and player resources
+  useEffect(() => {
+    return () => {
+      if (recIntervalRef.current) clearInterval(recIntervalRef.current);
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+      services.audioRecorderService.stopPlayback().catch(() => {});
+      services.audioRecorderService.cancelRecording().catch(() => {});
+    };
+  }, []);
+
+  // ─── START REAL MICROPHONE RECORDING ──────────────────────────────
   const handleStartRealRecording = async () => {
     if (isRecording) return;
+
+    // If currently playing, stop playback first
+    if (isPlaying) {
+      await handleStopPlayback();
+    }
 
     try {
       const permStatus = await services.audioRecorderService.requestMicrophonePermission();
@@ -110,22 +162,32 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
         return;
       }
 
-      // Start recording engine
       await services.audioRecorderService.startRecording();
       setIsRecording(true);
       setRecTimer(0);
+      setLiveAmplitude(0);
       setAudioUri(null);
       setAudioSource('RECORDED');
 
       if (onStartRecording) onStartRecording();
 
-      // Start live timer interval
+      // Live status poll: reads actual elapsed time and amplitude from hardware
       if (recIntervalRef.current) clearInterval(recIntervalRef.current);
-      recIntervalRef.current = setInterval(() => {
-        setRecTimer(prev => prev + 1);
-      }, 1000);
+      recIntervalRef.current = setInterval(async () => {
+        try {
+          const status = await services.audioRecorderService.getRecordingStatus?.();
+          if (status) {
+            setRecTimer(status.elapsedSeconds);
+            setLiveAmplitude(status.amplitude);
+          } else {
+            setRecTimer(prev => prev + 1);
+          }
+        } catch {
+          setRecTimer(prev => prev + 1);
+        }
+      }, 500);
 
-      // Start pulsing recording indicator
+      // Start pulsing recording icon
       pulseLoopRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -141,17 +203,18 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
         ])
       );
       pulseLoopRef.current.start();
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Microphone recording error:', err);
       setIsRecording(false);
       if (recIntervalRef.current) clearInterval(recIntervalRef.current);
       Alert.alert(
         'Recording Error',
-        'Unable to access device microphone. Please check your microphone permissions and try again.'
+        err?.message || 'Unable to access device microphone. Please check permissions and try again.'
       );
     }
   };
 
+  // ─── STOP REAL MICROPHONE RECORDING ───────────────────────────────
   const handleStopRealRecording = async () => {
     if (!isRecording) return;
 
@@ -166,128 +229,154 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
       setDuration(finalDuration);
       setAudioUri(res.filePath);
       setAudioSource('RECORDED');
+      setCurrentFileName(res.fileName || 'recorded_voice.m4a');
+      setCurrentFileSize(res.fileSize || 0);
 
       if (onStopRecording) {
-        onStopRecording(res.filePath, finalDuration, 'RECORDED');
+        onStopRecording(
+          res.filePath,
+          finalDuration,
+          'RECORDED',
+          res.fileName || 'recorded_voice.m4a',
+          res.fileSize,
+          res.mimeType || 'audio/m4a'
+        );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Error stopping recording:', err);
-      Alert.alert('Recording Error', 'Error finalizing audio recording.');
+      Alert.alert('Recording Error', err?.message || 'Error finalizing audio recording.');
     }
   };
 
-  // Handle Uploading Audio File (.mp3, .m4a)
-  const handleUploadAudioFile = () => {
-    if (typeof document !== 'undefined') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'audio/*,.mp3,.m4a,.wav';
-      input.onchange = (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        if (target.files && target.files.length > 0) {
-          const file = target.files[0];
-          const fileUri = URL.createObjectURL(file);
-          const fileName = file.name;
-          const approxDuration = Math.max(5, Math.round(file.size / 16000));
-
-          setAudioUri(fileUri);
-          setAudioSource('UPLOADED');
-          setUploadedFileName(fileName);
-          setDuration(approxDuration);
-
-          if (onStopRecording) {
-            onStopRecording(fileUri, approxDuration, 'UPLOADED', fileName);
-          }
-        }
-      };
-      input.click();
-    } else {
-      const mockUploadUri = `file:///data/user/0/com.ficmanager/cache/uploaded_${Date.now()}.mp3`;
-      setAudioUri(mockUploadUri);
-      setAudioSource('UPLOADED');
-      setUploadedFileName('uploaded_audio.mp3');
-      setDuration(15);
-      if (onStopRecording) {
-        onStopRecording(mockUploadUri, 15, 'UPLOADED', 'uploaded_audio.mp3');
-      }
-    }
-  };
-
-  // Handle Play / Pause Real Recorded Sound
-  const handleTogglePlay = () => {
+  // ─── REAL UPLOAD PICKER (ANDROID SYSTEM PICKER) ───────────────────
+  const handleUploadAudioFile = async () => {
     if (isPlaying) {
-      if (audioElementRef.current) {
-        try {
-          audioElementRef.current.pause();
-        } catch (e) {}
+      await handleStopPlayback();
+    }
+
+    try {
+      const result = await services.audioRecorderService.pickAudioFile();
+      if (!result) {
+        // User cancelled picker
+        return;
       }
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      setPlaybackSeconds(0);
 
-      const targetUri = audioUri || initialAudioUri;
+      setAudioUri(result.filePath);
+      setAudioSource('UPLOADED');
+      setCurrentFileName(result.fileName || 'uploaded_audio.m4a');
+      setCurrentFileSize(result.fileSize || 0);
+      setDuration(result.durationSeconds || 0);
 
-      if (typeof Audio !== 'undefined' && targetUri) {
-        try {
-          const audio = new Audio(targetUri);
-          audioElementRef.current = audio;
-
-          audio.ontimeupdate = () => {
-            setPlaybackSeconds(Math.floor(audio.currentTime));
-          };
-
-          audio.onended = () => {
-            setIsPlaying(false);
-            setPlaybackSeconds(0);
-          };
-
-          audio.play().catch(err => {
-            console.log('HTML Audio play error, using synthesizer output:', err);
-            playSynthesizedVoiceSound();
-          });
-        } catch (e) {
-          playSynthesizedVoiceSound();
-        }
-      } else {
-        playSynthesizedVoiceSound();
+      if (onStopRecording) {
+        onStopRecording(
+          result.filePath,
+          result.durationSeconds || 0,
+          'UPLOADED',
+          result.fileName,
+          result.fileSize,
+          result.mimeType
+        );
       }
+    } catch (err: any) {
+      console.warn('Audio picker error:', err);
+      Alert.alert('Audio Picker Error', err?.message || 'Unable to read the selected audio file.');
     }
   };
 
-  // Audio Synthesizer Fallback so sound ALWAYS plays out of speaker
-  const playSynthesizedVoiceSound = () => {
-    try {
-      const AudioContextClass =
-        window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass) {
-        const ctx = new AudioContextClass();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
-        osc.frequency.exponentialRampToValueAtTime(550, ctx.currentTime + 0.6);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.2);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 1.2);
-      }
-    } catch (e) {}
+  // ─── REAL AUDIBLE PLAYBACK (LOUDSPEAKER ROUTE) ────────────────────
+  const handlePlay = async () => {
+    const targetUri = audioUri || initialAudioUri;
+    if (!targetUri) {
+      Alert.alert('No Audio', 'No audio recording found to play.');
+      return;
+    }
 
-    let current = 0;
-    const total = duration || recTimer || 10;
-    const interval = setInterval(() => {
-      current += 1;
-      setPlaybackSeconds(current);
-      if (current >= total) {
-        clearInterval(interval);
-        setIsPlaying(false);
+    try {
+      if (isPaused) {
+        await services.audioRecorderService.resumePlayback();
+        setIsPlaying(true);
+        setIsPaused(false);
+      } else {
+        const res = await services.audioRecorderService.startPlayback(targetUri);
+        setIsPlaying(true);
+        setIsPaused(false);
         setPlaybackSeconds(0);
+        if (res.duration > 0 && (!duration || duration === 0)) {
+          setDuration(res.duration);
+        }
       }
-    }, 1000);
+
+      // Track playback progress
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = setInterval(async () => {
+        try {
+          const status = await services.audioRecorderService.getPlaybackStatus?.();
+          if (status) {
+            setPlaybackSeconds(status.currentPosition);
+            if (!status.isPlaying && status.currentPosition === 0) {
+              if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+              setIsPlaying(false);
+              setIsPaused(false);
+            }
+          } else {
+            setPlaybackSeconds(prev => {
+              const next = prev + 1;
+              if (next >= (duration || 10)) {
+                if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+                setIsPlaying(false);
+                setIsPaused(false);
+                return 0;
+              }
+              return next;
+            });
+          }
+        } catch {
+          // Poll fallback
+        }
+      }, 500);
+    } catch (err: any) {
+      console.warn('Native playback error:', err);
+      setIsPlaying(false);
+      setIsPaused(false);
+      Alert.alert('Playback Error', 'Unable to play the audio file on this device.');
+    }
+  };
+
+  const handlePause = async () => {
+    try {
+      await services.audioRecorderService.pausePlayback();
+      setIsPlaying(false);
+      setIsPaused(true);
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+    } catch (err) {
+      console.warn('Pause error:', err);
+    }
+  };
+
+  const handleStopPlayback = async () => {
+    try {
+      await services.audioRecorderService.stopPlayback();
+      setIsPlaying(false);
+      setIsPaused(false);
+      setPlaybackSeconds(0);
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+    } catch (err) {
+      console.warn('Stop playback error:', err);
+    }
+  };
+
+  const handleDeleteAudio = async () => {
+    if (isPlaying || isPaused) {
+      await handleStopPlayback();
+    }
+    setAudioUri(null);
+    setCurrentFileName(null);
+    setCurrentFileSize(null);
+    setDuration(0);
+    setPlaybackSeconds(0);
+    if (onDeleteRecording) {
+      onDeleteRecording();
+    }
   };
 
   const formatTime = (secs: number) => {
@@ -296,8 +385,15 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const totalSecs = duration || recTimer || 10;
-  const progressPercent = totalSecs > 0 ? (playbackSeconds / totalSecs) * 100 : 0;
+  const formatFileSize = (bytes?: number | null) => {
+    if (!bytes || bytes <= 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const totalSecs = duration || 1;
+  const progressPercent = totalSecs > 0 ? Math.min(100, (playbackSeconds / totalSecs) * 100) : 0;
 
   return (
     <View style={styles.cardContainer}>
@@ -348,30 +444,37 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             <Text style={styles.liveRecLabel}>🔴 RECORDING REAL MIC AUDIO...</Text>
             <Text style={styles.liveRecTimer}>{formatTime(recTimer)}</Text>
             <Text style={styles.recAdviceText}>
-              Speak into device microphone now
+              Speak clearly into your device microphone
             </Text>
           </View>
 
           {/* Real-time active sound level wave bars */}
           <View style={styles.liveWaveformRow}>
-            {[12, 24, 18, 30, 22, 34, 16, 28, 20, 32, 14, 26, 18, 22].map((h, i) => (
-              <View
-                key={`live-wave-${i}`}
-                style={[
-                  styles.liveWaveBar,
-                  {
-                    height: Math.min(32, Math.max(10, (h + (recTimer * 7 + i * 3) % 20))),
-                    backgroundColor: '#DC2626',
-                  },
-                ]}
-              />
-            ))}
+            {[10, 20, 16, 28, 22, 34, 16, 28, 20, 32, 14, 26, 18, 24].map((baseH, i) => {
+              // Modulate height based on actual live amplitude if available
+              const ampBoost = liveAmplitude > 0 ? Math.min(24, Math.round((liveAmplitude / 32767) * 28)) : 0;
+              const h = Math.min(36, Math.max(8, baseH + ampBoost + ((recTimer * 5 + i * 4) % 12)));
+              return (
+                <View
+                  key={`live-wave-${i}`}
+                  style={[
+                    styles.liveWaveBar,
+                    {
+                      height: h,
+                      backgroundColor: '#DC2626',
+                    },
+                  ]}
+                />
+              );
+            })}
           </View>
 
           <TouchableOpacity
             style={styles.stopButton}
             onPress={handleStopRealRecording}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Stop Recording"
           >
             <Icon name="stop" size={20} color="#FFFFFF" style={{ marginRight: 6 }} />
             <Text style={styles.stopButtonText}>Stop Recording</Text>
@@ -381,10 +484,13 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
         /* STATE 2: RECORDED OR UPLOADED AUDIO ATTACHED */
         <View style={styles.playerCard}>
           <View style={styles.playerMainRow}>
+            {/* Play / Pause Toggle Button */}
             <TouchableOpacity
               style={[styles.playBtn, isPlaying && styles.playBtnActive]}
-              onPress={handleTogglePlay}
+              onPress={isPlaying ? handlePause : handlePlay}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={isPlaying ? 'Pause Audio' : 'Play Audio'}
             >
               <Icon
                 name={isPlaying ? 'pause' : 'play'}
@@ -397,29 +503,40 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             <View style={styles.playerTrackCol}>
               <View style={styles.playerMetaRow}>
                 <Text style={styles.audioTitleText} numberOfLines={1}>
-                  {isPlaying
-                    ? '🔊 Playing Audio File...'
-                    : audioSource === 'UPLOADED'
-                    ? `Uploaded: ${uploadedFileName || 'audio_file.mp3'}`
-                    : 'Recorded Voice Note'}
+                  {currentFileName ||
+                    (audioSource === 'UPLOADED' ? 'uploaded_audio.m4a' : 'recorded_voice.m4a')}
                 </Text>
                 <Text style={styles.timeCounterText}>
-                  {formatTime(playbackSeconds)} / {formatTime(totalSecs)}
+                  {formatTime(playbackSeconds)} / {formatTime(duration)}
                 </Text>
               </View>
 
+              {/* File details sub-label */}
+              <View style={styles.fileDetailsRow}>
+                <Text style={styles.fileDetailBadge}>
+                  {audioSource === 'UPLOADED' ? 'Device Storage' : 'Microphone Recording'}
+                </Text>
+                {currentFileSize ? (
+                  <Text style={styles.fileDetailSize}>
+                    • {formatFileSize(currentFileSize)}
+                  </Text>
+                ) : null}
+              </View>
+
+              {/* Progress Bar Track */}
               <View style={styles.progressBarTrack}>
                 <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
               </View>
 
+              {/* Waveform indicator */}
               <View style={styles.waveformContainer}>
-                {[14, 22, 16, 28, 12, 24, 18, 10, 26, 14, 20, 16].map((h, i) => (
+                {[12, 22, 16, 28, 12, 24, 18, 10, 26, 14, 20, 16, 24, 14].map((h, i) => (
                   <View
                     key={i}
                     style={[
                       styles.waveBar,
                       {
-                        height: isPlaying ? Math.min(30, h + (i % 3) * 4) : h,
+                        height: isPlaying ? Math.min(28, h + ((playbackSeconds * 4 + i * 3) % 10)) : h,
                         backgroundColor: isPlaying ? '#2563EB' : '#CBD5E1',
                       },
                     ]}
@@ -429,34 +546,45 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             </View>
           </View>
 
+          {/* Player Controls & Re-record Actions */}
           <View style={styles.playerFooterRow}>
+            {/* Playback Controls: Stop & Loudspeaker Badge */}
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="volume-high" size={16} color="#059669" style={{ marginRight: 4 }} />
-              <Text style={styles.speakerStatusText}>Speaker Ready to Playback</Text>
+              {(isPlaying || isPaused) && (
+                <TouchableOpacity
+                  style={styles.stopPlaybackBtn}
+                  onPress={handleStopPlayback}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="stop" size={14} color="#64748B" style={{ marginRight: 2 }} />
+                  <Text style={styles.stopPlaybackText}>Stop</Text>
+                </TouchableOpacity>
+              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
+                <Icon name="volume-high" size={15} color="#059669" style={{ marginRight: 4 }} />
+                <Text style={styles.speakerStatusText}>Speaker Output</Text>
+              </View>
             </View>
 
+            {/* Action buttons: Re-record & Delete */}
             <View style={styles.reRecordActions}>
               <TouchableOpacity
                 style={styles.reRecordBtn}
                 onPress={handleStartRealRecording}
+                activeOpacity={0.7}
               >
                 <Icon name="refresh" size={14} color="#2563EB" style={{ marginRight: 4 }} />
                 <Text style={styles.reRecordBtnText}>Re-record</Text>
               </TouchableOpacity>
 
-              {onDeleteRecording && (
-                <TouchableOpacity
-                  style={styles.deleteAudioBtn}
-                  onPress={() => {
-                    setAudioUri(null);
-                    setUploadedFileName(null);
-                    onDeleteRecording();
-                  }}
-                  accessibilityLabel="Delete audio recording"
-                >
-                  <Icon name="trash-can-outline" size={14} color="#DC2626" />
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.deleteAudioBtn}
+                onPress={handleDeleteAudio}
+                activeOpacity={0.7}
+                accessibilityLabel="Delete audio recording"
+              >
+                <Icon name="trash-can-outline" size={16} color="#DC2626" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -481,9 +609,9 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
             onPress={handleUploadAudioFile}
             activeOpacity={0.8}
             accessibilityRole="button"
-            accessibilityLabel="Upload Audio"
+            accessibilityLabel="Upload Audio File"
           >
-            <Icon name="upload" size={18} color="#334155" style={{ marginRight: 6 }} />
+            <Icon name="upload" size={18} color="#1E293B" style={{ marginRight: 8 }} />
             <Text style={styles.secondaryUploadButtonText}>
               Upload Audio (.mp3, .m4a)
             </Text>
@@ -497,107 +625,63 @@ export const FICAudioPlayerRecorder: React.FC<FICAudioPlayerRecorderProps> = ({
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    padding: 16,
     marginVertical: 10,
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 14,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '700',
     color: '#0F172A',
+    marginBottom: 2,
   },
   cardSubtitle: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: '#64748B',
-    marginTop: 2,
+    lineHeight: 16,
   },
   micBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: '#86EFAC',
   },
   micBadgeUploaded: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+    backgroundColor: '#DBEAFE',
+    borderColor: '#93C5FD',
   },
   micBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#16A34A',
+    color: '#15803D',
   },
   micBadgeTextUploaded: {
-    color: '#2563EB',
+    color: '#1D4ED8',
   },
-  actionsContainer: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  primaryRecordButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#DC2626',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    width: '100%',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  primaryRecordButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  orDividerText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginVertical: 8,
-    fontWeight: '500',
-  },
-  secondaryUploadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    width: '100%',
-  },
-  secondaryUploadButtonText: {
-    color: '#334155',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+
+  // State 1: Recording
   recordingStateBox: {
     backgroundColor: '#FEF2F2',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
     padding: 16,
     alignItems: 'center',
   },
@@ -608,84 +692,94 @@ const styles = StyleSheet.create({
     backgroundColor: '#DC2626',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 10,
     shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.35,
     shadowRadius: 8,
-    elevation: 8,
+    elevation: 4,
   },
   recordingMeta: {
     alignItems: 'center',
-    marginVertical: 10,
+    marginBottom: 10,
   },
   liveRecLabel: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 11.5,
+    fontWeight: '700',
     color: '#DC2626',
     letterSpacing: 0.5,
+    marginBottom: 4,
   },
   liveRecTimer: {
     fontSize: 24,
     fontWeight: '800',
     color: '#0F172A',
-    marginVertical: 4,
+    fontVariant: ['tabular-nums'],
+    marginBottom: 2,
   },
   recAdviceText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748B',
   },
   liveWaveformRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 36,
-    marginVertical: 10,
-    gap: 3,
+    height: 38,
+    gap: 4,
+    marginBottom: 14,
   },
   liveWaveBar: {
-    width: 3.5,
+    width: 4,
     borderRadius: 2,
   },
   stopButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#DC2626',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 10,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   stopButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: '700',
+    fontSize: 14,
   },
+
+  // State 2: Player
   playerCard: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 14,
+    padding: 12,
   },
   playerMainRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   playBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#2563EB',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 6,
+    elevation: 3,
   },
   playBtnActive: {
-    backgroundColor: '#1D4ED8',
+    backgroundColor: '#059669',
   },
   playerTrackCol: {
     flex: 1,
@@ -694,59 +788,90 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 2,
   },
   audioTitleText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#0F172A',
     flex: 1,
     marginRight: 8,
   },
   timeCounterText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    fontVariant: ['tabular-nums'],
+  },
+  fileDetailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  fileDetailBadge: {
     fontSize: 11,
-    fontWeight: '600',
     color: '#2563EB',
+    fontWeight: '500',
+  },
+  fileDetailSize: {
+    fontSize: 11,
+    color: '#64748B',
+    marginLeft: 4,
   },
   progressBarTrack: {
-    height: 6,
+    height: 4,
     backgroundColor: '#E2E8F0',
-    borderRadius: 3,
+    borderRadius: 2,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#2563EB',
-    borderRadius: 3,
+    borderRadius: 2,
   },
   waveformContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 32,
+    height: 20,
+    gap: 3,
   },
   waveBar: {
-    width: 4,
-    borderRadius: 2,
-    marginRight: 4,
+    flex: 1,
+    borderRadius: 1.5,
   },
   playerFooterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 10,
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
   },
   speakerStatusText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 11.5,
     color: '#059669',
+    fontWeight: '500',
+  },
+  stopPlaybackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  stopPlaybackText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
   },
   reRecordActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   reRecordBtn: {
     flexDirection: 'row',
@@ -754,8 +879,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 12,
-    marginRight: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
   },
   reRecordBtnText: {
     fontSize: 12,
@@ -763,9 +889,55 @@ const styles = StyleSheet.create({
     color: '#2563EB',
   },
   deleteAudioBtn: {
-    backgroundColor: '#FEE2E2',
     padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+
+  // State 3: Ready to Record
+  actionsContainer: {
+    alignItems: 'center',
+  },
+  primaryRecordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
     borderRadius: 12,
+    width: '100%',
+    height: 48,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  primaryRecordButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  orDividerText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginVertical: 8,
+  },
+  secondaryUploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    width: '100%',
+    height: 44,
+  },
+  secondaryUploadButtonText: {
+    color: '#1E293B',
+    fontSize: 13.5,
+    fontWeight: '600',
   },
 });
-

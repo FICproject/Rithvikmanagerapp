@@ -46,9 +46,11 @@ export interface ServiceContainer {
   audioRecorderService: IAudioRecorderService;
   mediaUploadService: IMediaUploadService;
   offlineQueueService: IOfflineQueueService;
+  fieldVisitService: FieldVisitService;
 }
 
 import { ENV } from '../constants/env';
+import { FieldVisitService, fieldVisitService } from './reports/FieldVisitService';
 
 import { HttpVendorRepository } from './repositories/http/HttpVendorRepository';
 import { HttpTaskRepository } from './repositories/http/HttpTaskRepository';
@@ -75,6 +77,9 @@ export const services: ServiceContainer = {
   notificationRepository: ENV.useMockData ? new MockNotificationRepository() : new HttpNotificationRepository(),
   storageService: new MockSecureStorageService(),
   audioRecorderService: new MockAudioRecorderService(),
-  mediaUploadService: ENV.useMockData ? new MockMediaUploadService() : new HttpMediaUploadService(),
+  mediaUploadService: new HttpMediaUploadService(),
   offlineQueueService: offlineQueueService,
+  fieldVisitService: fieldVisitService,
 };
+
+fieldVisitService.setVendorRepository(services.vendorRepository);

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { FICHeader } from '../../components/ui/FICHeader';
+import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
 
 export interface MoreMenuScreenProps {
@@ -73,7 +74,7 @@ export const MoreMenuScreen: React.FC<MoreMenuScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader
         title="More"

@@ -18,6 +18,7 @@ import { FICCard } from '../../components/ui/FICCard';
 import { FICButton } from '../../components/ui/FICButton';
 import { FICTextInput } from '../../components/ui/FICTextInput';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
+import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
 
 export interface VendorVisitScreenProps {
   vendorId?: string;
@@ -180,6 +181,14 @@ export const VendorVisitScreen: React.FC<VendorVisitScreenProps> = ({
           <Text style={styles.businessName}>{vendor?.businessName || 'Vendor'}</Text>
           <Text style={styles.vendorSub}>👤 {vendor?.vendorName} • {vendor?.category}</Text>
           <Text style={styles.address}>📍 {vendor?.address}</Text>
+          <FieldActionButtons
+            phoneNumber={vendor?.phone}
+            latitude={vendor?.latitude}
+            longitude={vendor?.longitude}
+            titleOrLabel={vendor?.businessName || vendor?.name}
+            address={vendor?.address}
+            style={{ marginTop: 12 }}
+          />
         </FICCard>
 
         {/* Decision Checklist Card */}

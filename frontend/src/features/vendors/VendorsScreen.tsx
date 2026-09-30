@@ -22,10 +22,12 @@ import { VendorFilterOptions } from '../../services/repositories/IVendorReposito
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FICEmptyState } from '../../components/feedback/FICEmptyState';
-import { FICAvatar } from '../../components/ui/FICAvatar';
+import { FICHeader } from '../../components/ui/FICHeader';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
 import { VendorCard } from './components/VendorCard';
+import { theme } from '../../theme';
 import { ASSETS } from '../../assets/logo';
+import { socketService } from '../../services/realtime/SocketService';
 
 const assets: any = ASSETS;
 
@@ -124,6 +126,26 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
     fetchVendors();
   }, [fetchVendors]);
 
+  useEffect(() => {
+    const unsub = socketService.subscribe<Vendor>('vendor.updated', (payload) => {
+      if (payload.data) {
+        setVendors((prev) =>
+          prev.map((v) => (v.id === payload.entityId ? { ...v, ...payload.data } : v))
+        );
+        setAllVendors((prev) =>
+          prev.map((v) => (v.id === payload.entityId ? { ...v, ...payload.data } : v))
+        );
+      }
+    });
+    const unsubReconnect = socketService.onReconnect(() => {
+      fetchVendors(true);
+    });
+    return () => {
+      unsub();
+      unsubReconnect();
+    };
+  }, [fetchVendors]);
+
   const handleRefresh = () => {
     setIsRefreshing(true);
     fetchVendors(true);
@@ -182,40 +204,12 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
-
-      {/* TOP BRANDING & PROFILE BAR */}
-      <View style={styles.topHeader}>
-        <TouchableOpacity
-          style={styles.hamburgerButton}
-          activeOpacity={0.7}
-          onPress={onOpenDrawer}
-          accessibilityLabel="Open Navigation Menu"
-        >
-          <Icon name="menu" size={26} color="#0F172A" />
-        </TouchableOpacity>
-
-        <View style={styles.headerRightActions}>
-          <TouchableOpacity
-            style={styles.bellButton}
-            activeOpacity={0.7}
-            onPress={() => onNavigateRoute && onNavigateRoute('Notifications')}
-            accessibilityLabel="Notifications"
-          >
-            <Icon name="bell-outline" size={24} color="#0F172A" />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.profileCircleButton}
-            activeOpacity={0.7}
-            onPress={() => onNavigateRoute && onNavigateRoute('Profile')}
-            accessibilityLabel="User Profile"
-          >
-            <FICAvatar name={managerDisplayName} size={36} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+      <FICHeader
+        title="Vendors"
+        leftActionIcon={<Text style={styles.headerIcon}>☰</Text>}
+        onLeftAction={onOpenDrawer}
+      />
 
       <View style={styles.container}>
         {/* TITLE & ADD VENDOR ROW */}
@@ -387,7 +381,7 @@ export const VendorsScreen: React.FC<VendorsScreenProps> = ({
           value: cat === 'All Categories' ? 'ALL' : cat,
         }))}
         selectedValue={selectedCategory}
-        onSelect={val => setSelectedCategory(val)}
+        onSelect={(val: string) => setSelectedCategory(val)}
         onClose={() => setShowCategoryModal(false)}
       />
 
@@ -518,6 +512,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+  },
+  headerIcon: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   topHeader: {
     height: 64,

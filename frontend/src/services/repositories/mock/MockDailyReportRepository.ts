@@ -3,6 +3,7 @@
  */
 import { IDailyReportRepository, SubmitDailyReportPayload, ReportPeriodFilter } from '../IDailyReportRepository';
 import { DailyReport } from '../../../types';
+import { fieldVisitService } from '../../reports/FieldVisitService';
 
 const getInitialMockReports = (): DailyReport[] => {
   return [
@@ -94,13 +95,17 @@ export class MockDailyReportRepository implements IDailyReportRepository {
 
 
     // Dynamic report details generator for any visit log or report ID
+    const visitRecords = await fieldVisitService.getVisitRecords();
+    const matchedVisit = visitRecords.find(v => v.id === id);
+
     const mockTitles: Record<string, string> = {
       'visit_1700069977654_op_jp9j': 'Sri Murugan Departmental Store',
       'visit_1700069988123_sk_821a': 'Saravana Bhavan Hotel',
       'visit_1700069999456_mn_112z': 'Annapoorna Sweets & Bakery',
     };
 
-    const shopTitle = mockTitles[id] || 'Field Visit Audit Log';
+    const shopTitle = matchedVisit?.shopName || mockTitles[id] || 'Field Visit Audit Log';
+    const shopLocation = matchedVisit?.location || 'Salem (636102)';
 
     return {
       id: id,
@@ -110,7 +115,7 @@ export class MockDailyReportRepository implements IDailyReportRepository {
       workSummary: `Verified operational catalog compliance, storefront GPS geotagging, and merchant onboarding details for ${shopTitle}. All documentation and tax invoices verified cleanly.`,
       shopsVisitedCount: 4,
       vendorsVisited: [
-        { vendorId: 'v-101', vendorName: shopTitle, location: 'Salem (636102)' },
+        { vendorId: 'v-101', vendorName: shopTitle, location: shopLocation },
         { vendorId: 'v-102', vendorName: 'Sri Lakshmi Enterprises', location: 'Salem (636102)' },
         { vendorId: 'v-103', vendorName: 'Vasanth & Co Retail Store', location: 'Coimbatore (641001)' },
       ],

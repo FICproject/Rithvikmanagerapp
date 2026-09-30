@@ -14,9 +14,9 @@ export interface AppEnvironment {
 // Development configuration placeholder (Base URL from environment / default)
 export const ENV: AppEnvironment = {
   envName: 'development',
-  apiBaseUrl: 'https://api-dev.forgeindia.in/api/v1',
+  apiBaseUrl: 'http://localhost:3000/api/v1',
   enableAnalytics: false,
   enablePushNotifications: false,
   apiTimeoutMs: 15000,
-  useMockData: true,
+  useMockData: false,
 };

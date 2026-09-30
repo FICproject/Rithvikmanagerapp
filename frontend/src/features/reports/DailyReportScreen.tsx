@@ -26,6 +26,7 @@ import { VendorPickerModal } from './components/VendorPickerModal';
 import { SubmitDailyReportPayload } from '../../services/repositories/IDailyReportRepository';
 
 export interface DailyReportScreenProps {
+  initialVendorId?: string;
   onOpenDrawer?: () => void;
   onNavigateRoute?: (routeName: string, params?: Record<string, any>) => void;
 }
@@ -48,6 +49,7 @@ export const getFormattedCurrentDate = (d = new Date()): { displayDate: string; 
 };
 
 export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
+  initialVendorId,
   onOpenDrawer,
   onNavigateRoute,
 }) => {
@@ -105,6 +107,61 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
   useEffect(() => {
     checkExistingTodayReport();
   }, [checkExistingTodayReport]);
+
+  // Automatically sync newly added or navigated vendor directly into daily report
+  useEffect(() => {
+    const syncVendorsIntoReport = async () => {
+      try {
+        // 1. If an explicit vendorId was passed via navigation
+        if (initialVendorId) {
+          const vendor = await services.vendorRepository.getVendorById(initialVendorId);
+          if (vendor) {
+            setVendorsVisited(prev => {
+              if (prev.some(v => v.vendorId === vendor.id)) return prev;
+              return [
+                ...prev,
+                {
+                  vendorId: vendor.id,
+                  vendorName: vendor.businessName,
+                  location: vendor.locationDistrict || vendor.address || 'Field Location',
+                },
+              ];
+            });
+            setShopsVisitedCount(prev => Math.max(prev, 1));
+            setWorkSummary(prev => {
+              if (prev.trim()) return prev;
+              return `Completed territory field visit and onboarding for ${vendor.businessName} in ${vendor.locationDistrict || 'territory'}. Verified documents and storefront signage.`;
+            });
+          }
+        }
+
+        // 2. Also sync any pending vendors added today
+        const pendingVendors = services.fieldVisitService.getPendingDailyReportVendors();
+        if (pendingVendors.length > 0) {
+          setVendorsVisited(prev => {
+            const existingIds = new Set(prev.map(v => v.vendorId));
+            const newlyAdded: DailyReportVendorVisited[] = [];
+            for (const pv of pendingVendors) {
+              if (!existingIds.has(pv.id)) {
+                newlyAdded.push({
+                  vendorId: pv.id,
+                  vendorName: pv.businessName,
+                  location: pv.locationDistrict || pv.address || 'Field Location',
+                });
+                existingIds.add(pv.id);
+              }
+            }
+            return [...prev, ...newlyAdded];
+          });
+          setShopsVisitedCount(prev => Math.max(prev, pendingVendors.length));
+        }
+      } catch {
+        // Ignore sync failure
+      }
+    };
+
+    syncVendorsIntoReport();
+  }, [initialVendorId]);
 
   // Voice recording duration timer
   useEffect(() => {
@@ -230,7 +287,7 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
   if (existingReport && !isSubmittedSuccess) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
         <FICHeader
           title="Daily Report"
           subtitle={dateInfo.displayDate}
@@ -262,7 +319,7 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
   if (isSubmittedSuccess) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+        <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
         <FICHeader title="Report Submitted" />
         <View style={styles.successContainer}>
           <Icon name="check-circle" size={64} color="#16A34A" style={{ marginBottom: 16 }} />
@@ -278,7 +335,7 @@ export const DailyReportScreen: React.FC<DailyReportScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
       <FICHeader
         title="Daily Report"
         subtitle={dateInfo.displayDate}

@@ -18,6 +18,8 @@ class MainApplication : Application(), ReactApplication {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
               add(NativeImagePickerPackage())
+              add(NativeAudioPackage())
+              add(NativeReportExportPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

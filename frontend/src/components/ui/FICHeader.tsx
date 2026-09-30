@@ -33,16 +33,6 @@ export const FICHeader: React.FC<FICHeaderProps> = ({
         <View style={styles.placeholder} />
       )}
       <View style={styles.titleContainer}>
-        {showLogo ? (
-          <View style={styles.headerLogoContainer}>
-            <Image
-              source={ASSETS.logo}
-              style={styles.headerLogo}
-              resizeMode="cover"
-              accessibilityLabel="Forge India Connect Logo"
-            />
-          </View>
-        ) : null}
         <View style={styles.titleTextCol}>
           <Text style={styles.title} numberOfLines={1}>
             {title}
@@ -93,16 +83,19 @@ const styles = StyleSheet.create({
   },
   titleTextCol: {
     justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     ...theme.typography.title,
     color: theme.colors.surface,
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: '600',
   },
   subtitle: {
     fontSize: 10,
     color: 'rgba(255,255,255,0.85)',
     marginTop: 1,
+    textAlign: 'center',
   },
   placeholder: {
     width: 40,

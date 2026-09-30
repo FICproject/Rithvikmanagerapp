@@ -231,6 +231,32 @@ export class CameraLocationService implements ICameraLocationService {
       }
     }
 
+    // Check if web/webview document picker is available
+    if (typeof document !== 'undefined') {
+      return new Promise<CameraCaptureResult>((resolve, reject) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        if (mode === 'camera') {
+          input.setAttribute('capture', 'environment');
+        }
+        input.onchange = (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          if (target.files && target.files.length > 0) {
+            const file = target.files[0];
+            const fileUri = URL.createObjectURL(file);
+            resolve({
+              uri: fileUri,
+              fileName: file.name,
+            });
+          } else {
+            reject(new Error('No photo selected.'));
+          }
+        };
+        input.click();
+      });
+    }
+
     // Fallback if native module is not yet linked in current runtime build
     return {
       uri: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=800',

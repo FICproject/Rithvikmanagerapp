@@ -46,9 +46,18 @@ export const VendorCard: React.FC<VendorCardProps> = ({ vendor, onPress }) => {
 
   const statusInfo = getStatusBadge();
 
-  const imageSource = vendor.imageKey && VENDOR_ASSETS[vendor.imageKey]
-    ? VENDOR_ASSETS[vendor.imageKey]
-    : VENDOR_ASSETS.abc_traders;
+  const getVendorImageSource = () => {
+    const customPhoto = vendor.shopPhotoUrl || vendor.logoUrl || (vendor as any).photoUrl || (vendor as any).imageUri || (vendor as any).storefrontPhotoUri;
+    if (customPhoto) {
+      return { uri: customPhoto };
+    }
+    if (vendor.imageKey && VENDOR_ASSETS[vendor.imageKey]) {
+      return VENDOR_ASSETS[vendor.imageKey];
+    }
+    return VENDOR_ASSETS.abc_traders;
+  };
+
+  const imageSource = getVendorImageSource();
 
   const hasIssues = (vendor.issueCount || 0) > 0;
 

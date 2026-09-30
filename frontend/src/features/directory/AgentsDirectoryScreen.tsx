@@ -17,6 +17,7 @@ import { services } from '../../services';
 import { FieldAgent } from '../../types';
 import { AgentStatusFilter } from '../../services/repositories/IAgentRepository';
 import { FICHeader } from '../../components/ui/FICHeader';
+import { theme } from '../../theme';
 import { FICTextInput } from '../../components/ui/FICTextInput';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
@@ -161,7 +162,7 @@ export const AgentsDirectoryScreen: React.FC<AgentsDirectoryScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+      <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
 
       <FICHeader
         title="Field Agents Directory"
