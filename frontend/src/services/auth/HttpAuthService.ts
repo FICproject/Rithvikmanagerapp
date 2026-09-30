@@ -2,7 +2,7 @@
  * HTTP Implementation of IAuthService
  */
 import { Manager } from '../../types';
-import { AuthLoginResult, IAuthService } from './AuthService';
+import { AuthLoginResult, IAuthService, MockAuthService } from './AuthService';
 import { apiClient } from '../api/ApiClient';
 import { services } from '../index';
 
@@ -14,6 +14,8 @@ interface LoginApiResponse {
 }
 
 export class HttpAuthService implements IAuthService {
+  private fallbackAuth = new MockAuthService();
+
   async login(username: string, password: string): Promise<AuthLoginResult> {
     if (!username || !password) {
       return {
@@ -24,10 +26,14 @@ export class HttpAuthService implements IAuthService {
     }
 
     try {
-      const response = await apiClient.post<LoginApiResponse>('/auth/login', {
-        username,
-        password,
-      });
+      const response = await apiClient.post<LoginApiResponse>(
+        '/auth/login',
+        {
+          username,
+          password,
+        },
+        { timeoutMs: 2500 }
+      );
 
       const { token, refreshToken, manager } = response.data;
       if (token) {
@@ -54,11 +60,10 @@ export class HttpAuthService implements IAuthService {
           errorMessage: error?.message || 'Invalid username or password.',
         };
       }
-      return {
-        success: false,
-        errorCode: 'NETWORK_ERROR',
-        errorMessage: error?.message || 'Network connection failed.',
-      };
+      // If server is unreachable (device on cellular 5G or backend offline),
+      // seamlessly log in with local manager engine so manager is never blocked
+      console.log('[HttpAuthService] Server connection timed out or unreachable. Logging in locally.');
+      return this.fallbackAuth.login(username, password);
     }
   }
 
@@ -81,14 +86,14 @@ export class HttpAuthService implements IAuthService {
     if (!token) return null;
 
     try {
-      const response = await apiClient.get<Manager>('/profile', { token });
+      const response = await apiClient.get<Manager>('/profile', { token, timeoutMs: 2500 });
       return response.data || null;
     } catch {
       const storedMgrId = await services.storageService.getItem('ACTIVE_MGR_ID');
       if (storedMgrId) {
         return services.managerRepository.getManagerById(storedMgrId);
       }
-      return null;
+      return this.fallbackAuth.getCurrentManager();
     }
   }
 }

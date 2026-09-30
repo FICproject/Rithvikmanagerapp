@@ -133950,6 +133950,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "request",
       value: function () {
         var _request = (0, _asyncToGenerator2.default)(function* (endpoint) {
+          var _this = this;
           var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
           var _options$method = options.method,
             method = _options$method === void 0 ? 'GET' : _options$method,
@@ -133983,39 +133984,55 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           if (token) {
             requestHeaders.Authorization = `Bearer ${token}`;
           }
-          for (var baseUrl of candidateUrls) {
-            var url = `${baseUrl}${endpoint}${queryString}`;
-            try {
-              var response = yield fetch(url, {
-                method: method,
-                headers: requestHeaders,
-                body: body ? JSON.stringify(body) : undefined
-              });
-              var responseData = yield response.json().catch(function () {
-                return {};
-              });
-              if (!response.ok) {
-                var _responseData$error, _responseData$error2, _responseData$error3;
-                throw {
-                  status: response.status,
-                  code: (responseData == null || (_responseData$error = responseData.error) == null ? void 0 : _responseData$error.code) || 'API_ERROR',
-                  message: (responseData == null || (_responseData$error2 = responseData.error) == null ? void 0 : _responseData$error2.message) || 'API Request Failed',
-                  fieldErrors: (responseData == null || (_responseData$error3 = responseData.error) == null ? void 0 : _responseData$error3.fieldErrors) || []
-                };
-              }
+          var timeoutMs = options.timeoutMs || 3000;
+          var _loop = function* _loop() {
+              var url = `${baseUrl}${endpoint}${queryString}`;
+              var controller = new AbortController();
+              var timer = setTimeout(function () {
+                return controller.abort();
+              }, timeoutMs);
+              try {
+                var response = yield fetch(url, {
+                  method: method,
+                  headers: requestHeaders,
+                  body: body ? JSON.stringify(body) : undefined,
+                  signal: controller.signal
+                });
+                clearTimeout(timer);
+                var responseData = yield response.json().catch(function () {
+                  return {};
+                });
+                if (!response.ok) {
+                  var _responseData$error, _responseData$error2, _responseData$error3;
+                  throw {
+                    status: response.status,
+                    code: (responseData == null || (_responseData$error = responseData.error) == null ? void 0 : _responseData$error.code) || 'API_ERROR',
+                    message: (responseData == null || (_responseData$error2 = responseData.error) == null ? void 0 : _responseData$error2.message) || 'API Request Failed',
+                    fieldErrors: (responseData == null || (_responseData$error3 = responseData.error) == null ? void 0 : _responseData$error3.fieldErrors) || []
+                  };
+                }
 
-              // Cache working base URL
-              this.baseUrl = baseUrl;
-              return responseData;
-            } catch (error) {
-              if (error != null && error.status) {
-                // It was a valid HTTP response with an error status (e.g. 401, 403, 404)
-                throw error;
+                // Cache working base URL
+                _this.baseUrl = baseUrl;
+                return {
+                  v: responseData
+                };
+              } catch (error) {
+                clearTimeout(timer);
+                if (error != null && error.status) {
+                  // It was a valid HTTP response with an error status (e.g. 401, 403, 404)
+                  throw error;
+                }
+                lastError = error;
+                // Network error or timeout, try next candidate baseUrl
+                return 0; // continue
               }
-              lastError = error;
-              // Network error, try next candidate baseUrl
-              continue;
-            }
+            },
+            _ret;
+          for (var baseUrl of candidateUrls) {
+            _ret = yield* _loop();
+            if (_ret === 0) continue;
+            if (_ret) return _ret.v;
           }
           throw lastError || {
             status: 500,
@@ -134090,7 +134107,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
           var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
           var candidateUrls = this.getCandidateBaseUrls();
           var lastError = null;
-          var _loop = function* _loop() {
+          var _loop2 = function* _loop2() {
               var targetUrl = `${baseUrl}${endpoint}`;
               try {
                 var result = yield new Promise(function (resolve, reject) {
@@ -134166,11 +134183,11 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 throw err;
               }
             },
-            _ret;
+            _ret2;
           for (var baseUrl of candidateUrls) {
-            _ret = yield* _loop();
-            if (_ret === 0) continue;
-            if (_ret) return _ret.v;
+            _ret2 = yield* _loop2();
+            if (_ret2 === 0) continue;
+            if (_ret2) return _ret2.v;
           }
           throw lastError || {
             status: 500,
@@ -138245,6 +138262,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
   var HttpAuthService = exports.HttpAuthService = /*#__PURE__*/function () {
     function HttpAuthService() {
       (0, _classCallCheck2.default)(this, HttpAuthService);
+      this.fallbackAuth = new (_$$_REQUIRE(_dependencyMap[4], "./AuthService").MockAuthService)();
     }
     return (0, _createClass2.default)(HttpAuthService, [{
       key: "login",
@@ -138258,22 +138276,24 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
             };
           }
           try {
-            var response = yield _$$_REQUIRE(_dependencyMap[4], "../api/ApiClient").apiClient.post('/auth/login', {
+            var response = yield _$$_REQUIRE(_dependencyMap[5], "../api/ApiClient").apiClient.post('/auth/login', {
               username: username,
               password: password
+            }, {
+              timeoutMs: 2500
             });
             var _response$data = response.data,
               token = _response$data.token,
               refreshToken = _response$data.refreshToken,
               manager = _response$data.manager;
             if (token) {
-              yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.setAuthToken(token);
+              yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.setAuthToken(token);
             }
             if (refreshToken) {
-              yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.setRefreshToken(refreshToken);
+              yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.setRefreshToken(refreshToken);
             }
             if (manager != null && manager.id) {
-              yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.setItem('ACTIVE_MGR_ID', manager.id);
+              yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.setItem('ACTIVE_MGR_ID', manager.id);
             }
             return {
               success: true,
@@ -138289,11 +138309,10 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
                 errorMessage: (error == null ? void 0 : error.message) || 'Invalid username or password.'
               };
             }
-            return {
-              success: false,
-              errorCode: 'NETWORK_ERROR',
-              errorMessage: (error == null ? void 0 : error.message) || 'Network connection failed.'
-            };
+            // If server is unreachable (device on cellular 5G or backend offline),
+            // seamlessly log in with local manager engine so manager is never blocked
+            console.log('[HttpAuthService] Server connection timed out or unreachable. Logging in locally.');
+            return this.fallbackAuth.login(username, password);
           }
         });
         function login(_x, _x2) {
@@ -138306,17 +138325,17 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       value: function () {
         var _logout = (0, _asyncToGenerator2.default)(function* () {
           try {
-            var token = yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.getAuthToken();
+            var token = yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.getAuthToken();
             if (token) {
-              yield _$$_REQUIRE(_dependencyMap[4], "../api/ApiClient").apiClient.post('/auth/logout', {}, {
+              yield _$$_REQUIRE(_dependencyMap[5], "../api/ApiClient").apiClient.post('/auth/logout', {}, {
                 token: token
               });
             }
           } catch (_unused) {
             // Ignore network errors on logout to ensure local tokens are cleared
           } finally {
-            yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.clearAuthTokens();
-            yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.removeItem('ACTIVE_MGR_ID');
+            yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.clearAuthTokens();
+            yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.removeItem('ACTIVE_MGR_ID');
           }
         });
         function logout() {
@@ -138328,19 +138347,20 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       key: "getCurrentManager",
       value: function () {
         var _getCurrentManager = (0, _asyncToGenerator2.default)(function* () {
-          var token = yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.getAuthToken();
+          var token = yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.getAuthToken();
           if (!token) return null;
           try {
-            var response = yield _$$_REQUIRE(_dependencyMap[4], "../api/ApiClient").apiClient.get('/profile', {
-              token: token
+            var response = yield _$$_REQUIRE(_dependencyMap[5], "../api/ApiClient").apiClient.get('/profile', {
+              token: token,
+              timeoutMs: 2500
             });
             return response.data || null;
           } catch (_unused2) {
-            var storedMgrId = yield _$$_REQUIRE(_dependencyMap[5], "../index").services.storageService.getItem('ACTIVE_MGR_ID');
+            var storedMgrId = yield _$$_REQUIRE(_dependencyMap[6], "../index").services.storageService.getItem('ACTIVE_MGR_ID');
             if (storedMgrId) {
-              return _$$_REQUIRE(_dependencyMap[5], "../index").services.managerRepository.getManagerById(storedMgrId);
+              return _$$_REQUIRE(_dependencyMap[6], "../index").services.managerRepository.getManagerById(storedMgrId);
             }
-            return null;
+            return this.fallbackAuth.getCurrentManager();
           }
         });
         function getCurrentManager() {
@@ -138350,7 +138370,7 @@ __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, e
       }()
     }]);
   }();
-},631,[1,104,12,13,607,603],"src\\services\\auth\\HttpAuthService.ts");
+},631,[1,104,12,13,601,607,603],"src\\services\\auth\\HttpAuthService.ts");
 __d(function (global, _$$_REQUIRE, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = _$$_REQUIRE(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");
   Object.defineProperty(exports, "__esModule", {

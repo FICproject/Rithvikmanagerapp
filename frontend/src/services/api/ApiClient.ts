@@ -61,14 +61,21 @@ export class ApiClient {
       requestHeaders.Authorization = `Bearer ${token}`;
     }
 
+    const timeoutMs = options.timeoutMs || 3000;
+
     for (const baseUrl of candidateUrls) {
       const url = `${baseUrl}${endpoint}${queryString}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
       try {
         const response = await fetch(url, {
           method,
           headers: requestHeaders,
           body: body ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
         });
+        clearTimeout(timer);
 
         const responseData = await response.json().catch(() => ({}));
 
@@ -85,12 +92,13 @@ export class ApiClient {
         this.baseUrl = baseUrl;
         return responseData as ApiResponseEnvelope<T>;
       } catch (error: any) {
+        clearTimeout(timer);
         if (error?.status) {
           // It was a valid HTTP response with an error status (e.g. 401, 403, 404)
           throw error;
         }
         lastError = error;
-        // Network error, try next candidate baseUrl
+        // Network error or timeout, try next candidate baseUrl
         continue;
       }
     }
