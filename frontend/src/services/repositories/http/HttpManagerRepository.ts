@@ -143,5 +143,18 @@ export class HttpManagerRepository implements IManagerRepository {
     }
     return pinManagers;
   }
+
+  async getManagerByPhone(phone: string): Promise<Manager | null> {
+    const cleanInput = phone.replace(/[^0-9]/g, '');
+    const last10 = cleanInput.slice(-10);
+    if (!last10) return null;
+
+    const all = await this.getManagersInScope('');
+    const found = all.find(m => {
+      const cleanMPhone = (m.phone || '').replace(/[^0-9]/g, '');
+      return cleanMPhone === cleanInput || cleanMPhone.slice(-10) === last10;
+    });
+    return found || null;
+  }
 }
 

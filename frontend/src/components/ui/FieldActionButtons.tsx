@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
+import { googleMapsLocationService } from '../../services/maps';
 
 export interface FieldActionButtonsProps {
   phoneNumber?: string | null;
@@ -21,6 +22,8 @@ export interface FieldActionButtonsProps {
   address?: string;
   subtitle?: string;
   showContainerCard?: boolean;
+  showCall?: boolean;
+  showNavigate?: boolean;
   style?: StyleProp<ViewStyle>;
   onCallInitiated?: () => void;
   onNavigateInitiated?: () => void;
@@ -69,6 +72,8 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
   address,
   subtitle,
   showContainerCard = false,
+  showCall = true,
+  showNavigate = true,
   style,
   onCallInitiated,
   onNavigateInitiated,
@@ -96,94 +101,79 @@ export const FieldActionButtons: React.FC<FieldActionButtonsProps> = ({
   };
 
   const handleNavigate = async () => {
-    if (!locationStatus.valid) {
-      Alert.alert('Navigation', locationStatus.error || 'Location unavailable');
-      return;
-    }
-    const lat = Number(latitude);
-    const lng = Number(longitude);
-    const label = encodeURIComponent(titleOrLabel || 'Destination');
-    const geoUrl =
-      Platform.OS === 'android'
-        ? `geo:${lat},${lng}?q=${lat},${lng}(${label})`
-        : `maps:0,0?q=${label}@${lat},${lng}`;
-    const fallbackWebUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-
-    try {
-      const supported = await Linking.canOpenURL(geoUrl);
-      if (supported) {
-        await Linking.openURL(geoUrl);
-        onNavigateInitiated?.();
-      } else {
-        await Linking.openURL(fallbackWebUrl);
-        onNavigateInitiated?.();
-      }
-    } catch {
-      Linking.openURL(fallbackWebUrl).catch(() => {
-        Alert.alert('Location Coordinates', `${lat}, ${lng}\n${address || ''}`);
-      });
-    }
+    onNavigateInitiated?.();
+    await googleMapsLocationService.openNavigation(latitude, longitude, titleOrLabel, address);
   };
+
+  if (!showCall && !showNavigate) {
+    return null;
+  }
 
   const renderContent = () => (
     <View style={styles.actionRow}>
       {/* Call Button */}
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          styles.callButton,
-          !phoneStatus.valid && styles.disabledButton,
-        ]}
-        onPress={handleCall}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={`Call ${titleOrLabel || 'Contact'}`}
-      >
-        <Icon
-          name="phone"
-          size={16}
-          color={phoneStatus.valid ? '#1E40AF' : '#94A3B8'}
-          style={styles.btnIcon}
-        />
-        <Text
+      {showCall && (
+        <TouchableOpacity
           style={[
-            styles.buttonText,
-            styles.callButtonText,
-            !phoneStatus.valid && styles.disabledButtonText,
+            styles.actionButton,
+            styles.callButton,
+            !phoneStatus.valid && styles.disabledButton,
+            !showNavigate && { flex: 1 },
           ]}
+          onPress={handleCall}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Call ${titleOrLabel || 'Contact'}`}
         >
-          Call
-        </Text>
-      </TouchableOpacity>
+          <Icon
+            name="phone"
+            size={16}
+            color={phoneStatus.valid ? '#1E40AF' : '#94A3B8'}
+            style={styles.btnIcon}
+          />
+          <Text
+            style={[
+              styles.buttonText,
+              styles.callButtonText,
+              !phoneStatus.valid && styles.disabledButtonText,
+            ]}
+          >
+            Call
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Navigate Button */}
-      <TouchableOpacity
-        style={[
-          styles.actionButton,
-          styles.navigateButton,
-          !locationStatus.valid && styles.disabledButton,
-        ]}
-        onPress={handleNavigate}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={`Navigate to ${titleOrLabel || 'Location'}`}
-      >
-        <Icon
-          name="navigation-variant"
-          size={16}
-          color={locationStatus.valid ? '#0D9488' : '#94A3B8'}
-          style={styles.btnIcon}
-        />
-        <Text
+      {showNavigate && (
+        <TouchableOpacity
           style={[
-            styles.buttonText,
-            styles.navigateButtonText,
-            !locationStatus.valid && styles.disabledButtonText,
+            styles.actionButton,
+            styles.navigateButton,
+            !locationStatus.valid && styles.disabledButton,
+            !showCall && { flex: 1 },
           ]}
+          onPress={handleNavigate}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Navigate to ${titleOrLabel || 'Location'}`}
         >
-          Navigate
-        </Text>
-      </TouchableOpacity>
+          <Icon
+            name="navigation-variant"
+            size={16}
+            color={locationStatus.valid ? '#0D9488' : '#94A3B8'}
+            style={styles.btnIcon}
+          />
+          <Text
+            style={[
+              styles.buttonText,
+              styles.navigateButtonText,
+              !locationStatus.valid && styles.disabledButtonText,
+            ]}
+          >
+            Navigate
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 

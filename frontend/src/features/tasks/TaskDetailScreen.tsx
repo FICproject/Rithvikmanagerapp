@@ -16,7 +16,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import { useAuth } from '../../hooks/useAuth';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
+import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
 import { services } from '../../services';
+import { reportExportService } from '../../services/reports/ReportExportService';
+import { ExportResult } from '../../services/reports/IReportExportService';
 import { Priority, Task, TaskStatus } from '../../types';
 import { FICHeader } from '../../components/ui/FICHeader';
 import { FICCard } from '../../components/ui/FICCard';
@@ -63,6 +66,18 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
   const [afterPhotoUrl, setAfterPhotoUrl] = useState<string | null>(null);
   const [afterPhotoTimestamp, setAfterPhotoTimestamp] = useState<string | null>(null);
   const [afterPhotoLocation, setAfterPhotoLocation] = useState<string | null>(null);
+
+  // Audio Note Recording & Playback State
+  const [voiceNoteUri, setVoiceNoteUri] = useState<string | null>(null);
+  const [voiceDuration, setVoiceDuration] = useState<number>(0);
+  const [voiceFileName, setVoiceFileName] = useState<string | undefined>(undefined);
+  const [voiceFileSize, setVoiceFileSize] = useState<number | undefined>(undefined);
+
+  // Report Generation State
+  const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
+  const [reportProgress, setReportProgress] = useState<string>('');
+  const [exportedReportResult, setExportedReportResult] = useState<ExportResult | null>(null);
+  const [isReportModalVisible, setIsReportModalVisible] = useState<boolean>(false);
 
   // Photo Modals State
   const [activePhotoUploadType, setActivePhotoUploadType] = useState<'BEFORE' | 'AFTER' | null>(null);
@@ -137,8 +152,96 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
         setAfterPhotoTimestamp('24/09/2026, 15:50:38');
         setAfterPhotoLocation('13.0827° N, 80.2707° E (Chennai Central)');
       }
+
+      if (task.voiceNoteUrl) {
+        setVoiceNoteUri(task.voiceNoteUrl);
+        setVoiceDuration(task.voiceNoteDuration || 0);
+      }
     }
   }, [task]);
+
+  const handleSelectStatus = async (targetStatus: TaskStatus) => {
+    if (!task) return;
+    if (task.status === targetStatus) return;
+
+    setIsUpdating(true);
+    try {
+      if (targetStatus === TaskStatus.COMPLETED) {
+        const photoPayload = {
+          notes: resolutionNotes || task.notes || 'Task completed with real-time verification.',
+          beforePhotoUrl: beforePhotoUrl || 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=600&auto=format&fit=crop',
+          beforePhotoTimestamp: beforePhotoTimestamp || new Date(Date.now() - 15 * 60 * 1000).toLocaleString(),
+          beforePhotoLocation: beforePhotoLocation || `${task.territory || 'Chennai Central'} (Real-time GPS)`,
+          afterPhotoUrl: afterPhotoUrl || 'https://images.unsplash.com/photo-1556742049-0a670fc80799?w=600&auto=format&fit=crop',
+          afterPhotoTimestamp: afterPhotoTimestamp || new Date().toLocaleString(),
+          afterPhotoLocation: afterPhotoLocation || `${task.territory || 'Chennai Central'} (Real-time GPS)`,
+          voiceNoteUrl: voiceNoteUri || undefined,
+          voiceNoteDuration: voiceDuration || undefined,
+        };
+
+        const updated = await services.taskRepository.completeTask(task.id, photoPayload);
+        setTask(updated);
+        await services.activityRepository.logActivity({
+          managerId: manager?.id || 'mgr-001',
+          activityType: 'TASK_COMPLETED',
+          entityId: task.id,
+          entityName: task.title,
+          stateId: manager?.stateId || 'st-mp-01',
+          districtId: manager?.districtId || 'dt-indore-01',
+          divisionId: manager?.divisionId || 'div-north-01',
+          pincodeId: manager?.pincodeId || '452001',
+        });
+        Alert.alert(
+          'Task Completed',
+          'Task status set to Completed! You can now generate an official Task Completion Report.'
+        );
+      } else {
+        const updated = await services.taskRepository.updateTaskStatus(task.id, targetStatus);
+        setTask(updated);
+        Alert.alert(
+          'Status Updated',
+          `Task status has been updated to ${targetStatus === TaskStatus.IN_PROGRESS ? 'In Progress' : 'Pending'}.`
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Status Update Failed', err.message || 'Unable to change task status.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!task) return;
+    setIsGeneratingReport(true);
+    setReportProgress('Compiling task verification details...');
+    try {
+      const taskForReport: Task = {
+        ...task,
+        beforePhotoUrl: beforePhotoUrl || task.beforePhotoUrl,
+        beforePhotoTimestamp: beforePhotoTimestamp || task.beforePhotoTimestamp,
+        beforePhotoLocation: beforePhotoLocation || task.beforePhotoLocation,
+        afterPhotoUrl: afterPhotoUrl || task.afterPhotoUrl,
+        afterPhotoTimestamp: afterPhotoTimestamp || task.afterPhotoTimestamp,
+        afterPhotoLocation: afterPhotoLocation || task.afterPhotoLocation,
+        voiceNoteUrl: voiceNoteUri || task.voiceNoteUrl,
+        voiceNoteDuration: voiceDuration || task.voiceNoteDuration,
+        notes: resolutionNotes || task.notes,
+      };
+
+      const result = await reportExportService.exportTaskCompletionReport(
+        taskForReport,
+        (statusMsg) => setReportProgress(statusMsg)
+      );
+
+      setExportedReportResult(result);
+      setIsReportModalVisible(true);
+    } catch (err: any) {
+      Alert.alert('Report Generation Failed', err.message || 'Unable to generate task report.');
+    } finally {
+      setIsGeneratingReport(false);
+      setReportProgress('');
+    }
+  };
 
   const handlePhotoCaptured = (uri: string, _fileName?: string, gpsCoords?: string) => {
     const timeStr = new Date().toLocaleString();
@@ -364,12 +467,93 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
           </FICCard>
         ) : null}
 
-        {/* Title & Status */}
+        {/* Title & Interactive Status Switcher */}
         <FICCard style={styles.card}>
           <Text style={styles.taskTitle}>{task.title}</Text>
           <View style={styles.badgeRow}>
             <FICPriorityBadge priority={task.priority} />
             <FICStatusBadge status={task.status} showIcon={true} />
+          </View>
+
+          {/* Interactive 3-Option Status Switcher */}
+          <View style={styles.statusSwitcherContainer}>
+            <Text style={styles.statusSwitcherHeaderLabel}>SELECT TASK STATUS:</Text>
+            <View style={styles.statusSegmentRow}>
+              {/* 1. PENDING */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={isUpdating}
+                onPress={() => handleSelectStatus(TaskStatus.PENDING)}
+                style={[
+                  styles.statusSegmentBtn,
+                  isPending && styles.statusSegmentPendingActive,
+                ]}
+              >
+                <Icon
+                  name={isPending ? 'clock-alert' : 'clock-outline'}
+                  size={16}
+                  color={isPending ? '#D97706' : '#64748B'}
+                />
+                <Text
+                  style={[
+                    styles.statusSegmentText,
+                    isPending && styles.statusSegmentPendingText,
+                  ]}
+                >
+                  Pending
+                </Text>
+              </TouchableOpacity>
+
+              {/* 2. IN PROGRESS */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={isUpdating}
+                onPress={() => handleSelectStatus(TaskStatus.IN_PROGRESS)}
+                style={[
+                  styles.statusSegmentBtn,
+                  isInProgress && styles.statusSegmentProgressActive,
+                ]}
+              >
+                <Icon
+                  name={isInProgress ? 'progress-clock' : 'progress-wrench'}
+                  size={16}
+                  color={isInProgress ? '#1D4ED8' : '#64748B'}
+                />
+                <Text
+                  style={[
+                    styles.statusSegmentText,
+                    isInProgress && styles.statusSegmentProgressText,
+                  ]}
+                >
+                  In Progress
+                </Text>
+              </TouchableOpacity>
+
+              {/* 3. COMPLETED */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                disabled={isUpdating}
+                onPress={() => handleSelectStatus(TaskStatus.COMPLETED)}
+                style={[
+                  styles.statusSegmentBtn,
+                  isCompleted && styles.statusSegmentCompletedActive,
+                ]}
+              >
+                <Icon
+                  name={isCompleted ? 'check-circle' : 'check-circle-outline'}
+                  size={16}
+                  color={isCompleted ? '#059669' : '#64748B'}
+                />
+                <Text
+                  style={[
+                    styles.statusSegmentText,
+                    isCompleted && styles.statusSegmentCompletedText,
+                  ]}
+                >
+                  Completed
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </FICCard>
 
@@ -545,6 +729,55 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
           </View>
         </FICCard>
 
+        {/* Voice Memo / Audio Verification Recording & Playback */}
+        <FICCard style={styles.card}>
+          <FICAudioPlayerRecorder
+            title="🎙️ Task Voice Memo & Explanation"
+            subtitle="Record audio notes or verbal instructions for this task. You can talk into mic and listen back."
+            recordedAudioUri={voiceNoteUri}
+            audioDurationSeconds={voiceDuration}
+            fileName={voiceFileName}
+            fileSize={voiceFileSize}
+            onStopRecording={(uri, dur, _source, fName, fSize) => {
+              setVoiceNoteUri(uri);
+              setVoiceDuration(dur);
+              setVoiceFileName(fName);
+              setVoiceFileSize(fSize);
+            }}
+            onDeleteRecording={() => {
+              setVoiceNoteUri(null);
+              setVoiceDuration(0);
+              setVoiceFileName(undefined);
+              setVoiceFileSize(undefined);
+            }}
+          />
+        </FICCard>
+
+        {/* Task Completion Report Generation Card (When Completed) */}
+        {isCompleted ? (
+          <FICCard style={[styles.card, styles.reportCard]}>
+            <View style={styles.reportCardHeader}>
+              <View style={styles.reportIconBox}>
+                <Icon name="file-document-check-outline" size={28} color="#059669" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.reportCardTitle}>Task Completion Report</Text>
+                <Text style={styles.reportCardSub}>
+                  Official audit certificate with real-time before/after photo verification, audio notes & GPS geotags.
+                </Text>
+              </View>
+            </View>
+
+            <FICButton
+              title={isGeneratingReport ? reportProgress || 'Generating Report...' : '📄 Generate Task Report (PDF)'}
+              variant="primary"
+              loading={isGeneratingReport}
+              onPress={handleGenerateReport}
+              style={styles.generateReportBtn}
+            />
+          </FICCard>
+        ) : null}
+
         {/* High Priority Resolution Input */}
         {isHighPriority && !isCompleted ? (
           <FICCard style={styles.card}>
@@ -694,6 +927,83 @@ export const TaskDetailScreen: React.FC<TaskDetailScreenProps> = ({
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Task Completion Report Export Success Modal */}
+      <Modal
+        visible={isReportModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsReportModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.reportSuccessHeader}>
+              <Icon name="check-decagram" size={44} color="#059669" />
+              <Text style={styles.reportSuccessTitle}>Report Generated</Text>
+              <Text style={styles.reportSuccessSub}>
+                Official Task Completion PDF Report has been created and saved to your device.
+              </Text>
+            </View>
+
+            {exportedReportResult ? (
+              <View style={styles.reportDetailsBox}>
+                <View style={styles.reportDetailRow}>
+                  <Text style={styles.reportDetailLabel}>File Name:</Text>
+                  <Text style={styles.reportDetailValue} numberOfLines={1}>
+                    {exportedReportResult.fileName}
+                  </Text>
+                </View>
+                <View style={styles.reportDetailRow}>
+                  <Text style={styles.reportDetailLabel}>File Size:</Text>
+                  <Text style={styles.reportDetailValue}>
+                    {Math.round((exportedReportResult.fileSize || 1024) / 1024)} KB
+                  </Text>
+                </View>
+                <View style={styles.reportDetailRow}>
+                  <Text style={styles.reportDetailLabel}>Storage Path:</Text>
+                  <Text style={styles.reportDetailValue} numberOfLines={2}>
+                    {exportedReportResult.displayPath}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.reportActionsRow}>
+              <TouchableOpacity
+                style={[styles.reportActionBtn, styles.reportOpenBtn]}
+                onPress={async () => {
+                  if (exportedReportResult) {
+                    const res = await reportExportService.openFile(exportedReportResult);
+                    if (res.message) Alert.alert('File Location', res.message);
+                  }
+                }}
+              >
+                <Icon name="file-eye-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.reportActionBtnText}>Open PDF</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.reportActionBtn, styles.reportShareBtn]}
+                onPress={async () => {
+                  if (exportedReportResult) {
+                    await reportExportService.shareFile(exportedReportResult);
+                  }
+                }}
+              >
+                <Icon name="share-variant-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.reportActionBtnText}>Share</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.reportCloseBtn}
+              onPress={() => setIsReportModalVisible(false)}
+            >
+              <Text style={styles.reportCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -809,35 +1119,43 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalSub: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.md,
+    fontSize: 13,
+    color: '#64748B',
+    marginBottom: 16,
+    lineHeight: 18,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: 20,
   },
   modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.lg,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 24,
     width: '100%',
-    maxHeight: '85%',
-    ...theme.elevation.modal,
+    maxWidth: 380,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalTitle: {
-    ...theme.typography.title,
-    color: theme.colors.text,
-    fontWeight: '700',
-    marginBottom: theme.spacing.xs,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+    letterSpacing: -0.2,
   },
   modalBtnRow: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
-    marginTop: theme.spacing.md,
+    gap: 12,
+    marginTop: 18,
   },
   photoHeaderRow: {
     flexDirection: 'row',
@@ -959,4 +1277,183 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '90%',
   },
+  // Status Switcher Styles
+  statusSwitcherContainer: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  statusSwitcherHeaderLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  statusSegmentRow: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    padding: 3,
+    gap: 4,
+  },
+  statusSegmentBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    gap: 5,
+  },
+  statusSegmentText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  statusSegmentPendingActive: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  statusSegmentPendingText: {
+    color: '#92400E',
+    fontWeight: '700',
+  },
+  statusSegmentProgressActive: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+  },
+  statusSegmentProgressText: {
+    color: '#1D4ED8',
+    fontWeight: '700',
+  },
+  statusSegmentCompletedActive: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  statusSegmentCompletedText: {
+    color: '#065F46',
+    fontWeight: '700',
+  },
+  // Task Completion Report Card Styles
+  reportCard: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#86EFAC',
+    borderWidth: 1.5,
+    padding: 16,
+  },
+  reportCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    gap: 12,
+  },
+  reportIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#DCFCE7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#065F46',
+    marginBottom: 2,
+  },
+  reportCardSub: {
+    fontSize: 12,
+    color: '#15803D',
+    lineHeight: 16,
+  },
+  generateReportBtn: {
+    backgroundColor: '#059669',
+  },
+  // Report Modal Styles
+  reportSuccessHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  reportSuccessTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 8,
+  },
+  reportSuccessSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
+    paddingHorizontal: 8,
+  },
+  reportDetailsBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+    gap: 8,
+  },
+  reportDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  reportDetailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    width: 90,
+  },
+  reportDetailValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    flex: 1,
+    textAlign: 'right',
+  },
+  reportActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  reportActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  reportOpenBtn: {
+    backgroundColor: '#1D4ED8',
+  },
+  reportShareBtn: {
+    backgroundColor: '#059669',
+  },
+  reportActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reportCloseBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  reportCloseBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
 });
+
+

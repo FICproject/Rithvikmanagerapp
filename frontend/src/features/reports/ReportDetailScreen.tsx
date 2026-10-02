@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../../theme';
 import { services } from '../../services';
 import { DailyReport } from '../../types';
@@ -15,6 +17,7 @@ import { FICCard } from '../../components/ui/FICCard';
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { formatReportDate } from './components/ReportCard';
+import { googleMapsLocationService } from '../../services/maps';
 
 export interface ReportDetailScreenProps {
   reportId?: string;
@@ -150,12 +153,30 @@ export const ReportDetailScreen: React.FC<ReportDetailScreenProps> = ({
             <View style={styles.vendorList}>
               {report.vendorsVisited.map(v => (
                 <View key={v.vendorId} style={styles.vendorCard}>
-                  <Text style={styles.vendorName}>{v.vendorName}</Text>
-                  {v.location ? (
-                    <Text style={styles.vendorLoc} numberOfLines={1}>
-                      📍 {v.location}
-                    </Text>
-                  ) : null}
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={styles.vendorName}>{v.vendorName}</Text>
+                    {v.location ? (
+                      <Text style={styles.vendorLoc} numberOfLines={1}>
+                        📍 {v.location}
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.vendorNavigateBtn}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      googleMapsLocationService.openNavigation(
+                        v.latitude,
+                        v.longitude,
+                        v.vendorName,
+                        v.location
+                      );
+                    }}
+                  >
+                    <Icon name="google-maps" size={14} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Text style={styles.vendorNavigateBtnText}>Navigate</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
@@ -253,6 +274,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   vendorName: {
     ...theme.typography.bodyMedium,
@@ -263,6 +287,19 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  vendorNavigateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#059669',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  vendorNavigateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
   audioPlayerBox: {
     flexDirection: 'row',

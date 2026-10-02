@@ -20,7 +20,6 @@ import { DashboardSummaryData } from '../../services/repositories/IDashboardRepo
 import { FICLoadingState } from '../../components/feedback/FICLoadingState';
 import { FICErrorState } from '../../components/feedback/FICErrorState';
 import { FICAvatar } from '../../components/ui/FICAvatar';
-import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
 import { ASSETS } from '../../assets/logo';
 
 const assets: any = ASSETS;
@@ -37,8 +36,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const { manager } = useAuth();
   const [summary, setSummary] = useState<DashboardSummaryData | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('Today');
-  const [showPeriodModal, setShowPeriodModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,22 +212,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <Text style={styles.scopeText}>All Pincodes</Text>
             </View>
           </View>
-        </View>
-
-        {/* DATE & PERIOD FILTER BAR */}
-        <View style={styles.dateFilterBar}>
-          <View style={styles.dateLeftRow}>
-            <Icon name="calendar-month-outline" size={20} color="#1E293B" style={{ marginRight: 8 }} />
-            <Text style={styles.dateLabelText}>Tue, 22 Sep 2026</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.todayDropdown}
-            activeOpacity={0.7}
-            onPress={() => setShowPeriodModal(true)}
-          >
-            <Text style={styles.todayDropdownText}>{selectedPeriod}</Text>
-            <Icon name="chevron-down" size={16} color="#334155" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
         </View>
 
         {/* 4 METRIC KPI CARDS - 2x2 Grid */}
@@ -520,22 +501,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </View>
         </View>
       </ScrollView>
-
-      {/* Date / Period Filter Dropdown Modal */}
-      <FICDropdownModal
-        visible={showPeriodModal}
-        title="Select Date Filter Period"
-        options={[
-          { label: 'Today', value: 'Today' },
-          { label: 'Yesterday', value: 'Yesterday' },
-          { label: 'This Week', value: 'This Week' },
-          { label: 'This Month', value: 'This Month' },
-          { label: 'This Quarter', value: 'This Quarter' },
-        ]}
-        selectedValue={selectedPeriod}
-        onSelect={val => setSelectedPeriod(val)}
-        onClose={() => setShowPeriodModal(false)}
-      />
     </SafeAreaView>
   );
 };
@@ -715,41 +680,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#334155',
     fontWeight: '600',
-  },
-  /* Date Filter Bar */
-  dateFilterBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  dateLeftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateLabelText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  todayDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 16,
-  },
-  todayDropdownText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#334155',
   },
   /* KPI 2x2 Grid */
   kpiGrid: {

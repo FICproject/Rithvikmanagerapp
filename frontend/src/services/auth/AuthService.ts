@@ -15,6 +15,7 @@ export interface AuthLoginResult {
 
 export interface IAuthService {
   login(username: string, password: string): Promise<AuthLoginResult>;
+  loginWithManager(manager: Manager): Promise<AuthLoginResult>;
   logout(): Promise<void>;
   getCurrentManager(): Promise<Manager | null>;
 }
@@ -161,6 +162,7 @@ export class MockAuthService implements IAuthService {
     await services.storageService.setAuthToken(mockToken);
     await services.storageService.setRefreshToken(mockRefreshToken);
     await services.storageService.setItem('ACTIVE_MGR_ID', mockManager.id);
+    await services.storageService.setItem('ACTIVE_MGR_OBJECT', JSON.stringify(mockManager));
     this.activeManagerId = mockManager.id;
 
     return {
@@ -171,9 +173,29 @@ export class MockAuthService implements IAuthService {
     };
   }
 
+  async loginWithManager(manager: Manager): Promise<AuthLoginResult> {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    const mockToken = `fic_jwt_${Date.now()}_${manager.id}`;
+    const mockRefreshToken = `fic_ref_${Date.now()}_${manager.id}`;
+
+    await services.storageService.setAuthToken(mockToken);
+    await services.storageService.setRefreshToken(mockRefreshToken);
+    await services.storageService.setItem('ACTIVE_MGR_ID', manager.id);
+    await services.storageService.setItem('ACTIVE_MGR_OBJECT', JSON.stringify(manager));
+    this.activeManagerId = manager.id;
+
+    return {
+      success: true,
+      token: mockToken,
+      refreshToken: mockRefreshToken,
+      manager,
+    };
+  }
+
   async logout(): Promise<void> {
     await services.storageService.clearAuthTokens();
     await services.storageService.removeItem('ACTIVE_MGR_ID');
+    await services.storageService.removeItem('ACTIVE_MGR_OBJECT');
     this.activeManagerId = 'mgr-001';
   }
 
@@ -182,7 +204,18 @@ export class MockAuthService implements IAuthService {
     if (!token) return null;
     const storedMgrId = await services.storageService.getItem('ACTIVE_MGR_ID');
     const targetId = storedMgrId || this.activeManagerId;
-    return services.managerRepository.getManagerById(targetId);
+    const fromRepo = await services.managerRepository.getManagerById(targetId);
+    if (fromRepo) return fromRepo;
+
+    const storedObj = await services.storageService.getItem('ACTIVE_MGR_OBJECT');
+    if (storedObj) {
+      try {
+        return JSON.parse(storedObj) as Manager;
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }
 }
 

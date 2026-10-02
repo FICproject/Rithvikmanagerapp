@@ -3,15 +3,19 @@ package com.ficmanagerapp
 import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import com.facebook.react.bridge.*
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
 
-class NativeImagePickerModule(reactContext: ReactApplicationContext) :
+class NativeImagePickerModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext), ActivityEventListener {
 
     companion object {
@@ -29,6 +33,30 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
 
     override fun getName(): String = NAME
 
+    @Synchronized
+    private fun resolvePendingPromise(result: WritableMap?) {
+        val promise = pendingPromise ?: return
+        pendingPromise = null
+        currentPhotoPath = null
+        try {
+            promise.resolve(result)
+        } catch (e: Exception) {
+            // Ignore if promise was already resolved
+        }
+    }
+
+    @Synchronized
+    private fun rejectPendingPromise(code: String, message: String?, throwable: Throwable? = null) {
+        val promise = pendingPromise ?: return
+        pendingPromise = null
+        currentPhotoPath = null
+        try {
+            promise.reject(code, message, throwable)
+        } catch (e: Exception) {
+            // Ignore if promise was already rejected
+        }
+    }
+
     @ReactMethod
     fun launchCamera(promise: Promise) {
         val activity = currentActivity
@@ -38,13 +66,28 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
         }
 
         try {
+            // Clear any stale promise
+            pendingPromise?.let {
+                try { it.resolve(null) } catch (ignored: Exception) {}
+            }
             pendingPromise = promise
-            val photoFile = File.createTempFile("FIC_CAMERA_", ".jpg", reactApplicationContext.cacheDir)
+
+            // Use cache dir which is always configured in FileProvider
+            val storageDir = File(activity.cacheDir, "camera_photos")
+            if (!storageDir.exists()) {
+                storageDir.mkdirs()
+            }
+
+            val photoFile = File(storageDir, "FIC_CAM_${System.currentTimeMillis()}.jpg")
+            if (!photoFile.exists()) {
+                photoFile.createNewFile()
+            }
             currentPhotoPath = photoFile.absolutePath
 
+            val authority = "${activity.packageName}.fileprovider"
             val photoUri: Uri = FileProvider.getUriForFile(
-                reactApplicationContext,
-                "${reactApplicationContext.packageName}.fileprovider",
+                activity,
+                authority,
                 photoFile
             )
 
@@ -54,11 +97,27 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
                 addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
+            // Explicitly grant URI permission to all camera packages
+            try {
+                val resInfoList = activity.packageManager.queryIntentActivities(
+                    intent,
+                    PackageManager.MATCH_DEFAULT_ONLY
+                )
+                for (resolveInfo in resInfoList) {
+                    val packageName = resolveInfo.activityInfo.packageName
+                    activity.grantUriPermission(
+                        packageName,
+                        photoUri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+            } catch (permEx: Exception) {
+                // Ignore permission grant query issue
+            }
+
             activity.startActivityForResult(intent, REQUEST_CAMERA)
         } catch (e: Exception) {
-            pendingPromise = null
-            currentPhotoPath = null
-            promise.reject("CAMERA_ERROR", e.message, e)
+            rejectPendingPromise("CAMERA_LAUNCH_ERROR", e.message, e)
         }
     }
 
@@ -71,7 +130,12 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
         }
 
         try {
+            // Clear any stale promise
+            pendingPromise?.let {
+                try { it.resolve(null) } catch (ignored: Exception) {}
+            }
             pendingPromise = promise
+
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
                 type = "image/*"
             }
@@ -85,18 +149,17 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
                 activity.startActivityForResult(intent, REQUEST_GALLERY)
             }
         } catch (e: Exception) {
-            pendingPromise = null
-            promise.reject("GALLERY_ERROR", e.message, e)
+            rejectPendingPromise("GALLERY_LAUNCH_ERROR", e.message, e)
         }
     }
 
     override fun onActivityResult(activity: Activity?, requestCode: Int, resultCode: Int, data: Intent?) {
-        val promise = pendingPromise ?: return
+        if (requestCode != REQUEST_CAMERA && requestCode != REQUEST_GALLERY) {
+            return
+        }
 
         if (resultCode != Activity.RESULT_OK) {
-            pendingPromise = null
-            currentPhotoPath = null
-            promise.resolve(null)
+            resolvePendingPromise(null)
             return
         }
 
@@ -110,12 +173,17 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
                             putString("fileName", File(path).name)
                             putBoolean("didCancel", false)
                         }
-                        pendingPromise = null
-                        currentPhotoPath = null
-                        promise.resolve(result)
-                    } else if (data?.data != null) {
-                        val destFile = File.createTempFile("FIC_CAMERA_", ".jpg", reactApplicationContext.cacheDir)
-                        reactApplicationContext.contentResolver.openInputStream(data.data!!)?.use { input ->
+                        resolvePendingPromise(result)
+                        return
+                    }
+
+                    // If file is empty or camera returned data via intent
+                    if (data?.data != null) {
+                        val destFile = File(
+                            reactContext.cacheDir,
+                            "FIC_CAM_INTENT_${System.currentTimeMillis()}.jpg"
+                        )
+                        reactContext.contentResolver.openInputStream(data.data!!)?.use { input ->
                             destFile.outputStream().use { output ->
                                 input.copyTo(output)
                             }
@@ -125,34 +193,51 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
                             putString("fileName", destFile.name)
                             putBoolean("didCancel", false)
                         }
-                        pendingPromise = null
-                        currentPhotoPath = null
-                        promise.resolve(result)
-                    } else if (data?.extras?.get("data") != null) {
-                        val bitmap = data.extras?.get("data") as Bitmap
-                        val destFile = File.createTempFile("FIC_CAMERA_", ".jpg", reactApplicationContext.cacheDir)
+                        resolvePendingPromise(result)
+                        return
+                    }
+
+                    // Fallback to thumbnail bitmap if available in extras
+                    val extras = data?.extras
+                    val thumbObj = extras?.get("data")
+                    if (thumbObj is Bitmap) {
+                        val destFile = File(
+                            reactContext.cacheDir,
+                            "FIC_CAM_THUMB_${System.currentTimeMillis()}.jpg"
+                        )
                         FileOutputStream(destFile).use { out ->
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                            thumbObj.compress(Bitmap.CompressFormat.JPEG, 92, out)
                         }
                         val result = Arguments.createMap().apply {
                             putString("uri", "file://${destFile.absolutePath}")
                             putString("fileName", destFile.name)
                             putBoolean("didCancel", false)
                         }
-                        pendingPromise = null
-                        currentPhotoPath = null
-                        promise.resolve(result)
-                    } else {
-                        pendingPromise = null
-                        currentPhotoPath = null
-                        promise.resolve(null)
+                        resolvePendingPromise(result)
+                        return
                     }
+
+                    // If path exists even if smaller, check if bitmap can be decoded
+                    if (path != null && File(path).exists()) {
+                        val result = Arguments.createMap().apply {
+                            putString("uri", "file://$path")
+                            putString("fileName", File(path).name)
+                            putBoolean("didCancel", false)
+                        }
+                        resolvePendingPromise(result)
+                        return
+                    }
+
+                    resolvePendingPromise(null)
                 }
                 REQUEST_GALLERY -> {
                     val selectedImageUri = data?.data
                     if (selectedImageUri != null) {
-                        val destFile = File.createTempFile("FIC_GALLERY_", ".jpg", reactApplicationContext.cacheDir)
-                        reactApplicationContext.contentResolver.openInputStream(selectedImageUri)?.use { input ->
+                        val destFile = File(
+                            reactContext.cacheDir,
+                            "FIC_GALLERY_${System.currentTimeMillis()}.jpg"
+                        )
+                        reactContext.contentResolver.openInputStream(selectedImageUri)?.use { input ->
                             destFile.outputStream().use { output ->
                                 input.copyTo(output)
                             }
@@ -163,23 +248,17 @@ class NativeImagePickerModule(reactContext: ReactApplicationContext) :
                             putString("fileName", destFile.name)
                             putBoolean("didCancel", false)
                         }
-                        pendingPromise = null
-                        promise.resolve(result)
+                        resolvePendingPromise(result)
                     } else {
-                        pendingPromise = null
-                        promise.resolve(null)
+                        resolvePendingPromise(null)
                     }
-                }
-                else -> {
-                    pendingPromise = null
                 }
             }
         } catch (e: Exception) {
-            pendingPromise = null
-            currentPhotoPath = null
-            promise.reject("PROCESS_ERROR", e.message, e)
+            rejectPendingPromise("PROCESS_ERROR", e.message, e)
         }
     }
 
     override fun onNewIntent(intent: Intent?) {}
 }
+

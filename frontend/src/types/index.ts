@@ -14,6 +14,7 @@ export enum DivisionName {
   SOUTH = 'SOUTH',
   EAST = 'EAST',
   WEST = 'WEST',
+  CENTRAL = 'CENTRAL',
 }
 
 export interface TerritoryScope {
@@ -143,6 +144,8 @@ export interface Task {
   assignedBy?: string;
   territory?: string;
   notes?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDuration?: number;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -253,6 +256,9 @@ export interface DailyReportVendorVisited {
   vendorId: string;
   vendorName: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
+  gpsCoords?: string;
 }
 
 export interface DailyReport {
@@ -310,6 +316,13 @@ export interface LeaderboardEntry {
   issuesResolved: number;
   territoryName?: string;
   activitiesCount?: number;
+  stateId?: string;
+  stateName?: string;
+  districtId?: string;
+  districtName?: string;
+  divisionId?: string;
+  divisionName?: string;
+  pincode?: string;
 }
 
 export interface VisitRecord {
@@ -325,6 +338,11 @@ export interface VisitRecord {
   isInterested: boolean;
   photoUrl?: string;
   gpsCoords?: string;
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  phone?: string;
+  contactPhone?: string;
   reasonNotInterested?: string;
   voiceNoteUri?: string;
   voiceNoteDuration?: number;

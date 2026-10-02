@@ -67,6 +67,10 @@ export class HttpAuthService implements IAuthService {
     }
   }
 
+  async loginWithManager(manager: Manager): Promise<AuthLoginResult> {
+    return this.fallbackAuth.loginWithManager(manager);
+  }
+
   async logout(): Promise<void> {
     try {
       const token = await services.storageService.getAuthToken();

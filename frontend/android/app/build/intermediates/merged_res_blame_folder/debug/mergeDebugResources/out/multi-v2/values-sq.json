@@ -4,7 +4,7 @@
             "outputFile": "com.ficmanagerapp-mergeDebugResources-34:/values-sq/values-sq.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\9b599ce3ec670349f20e4c5da34b6a35\\transformed\\appcompat-1.6.1\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\9b599ce3ec670349f20e4c5da34b6a35\\transformed\\appcompat-1.6.1\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\1b1fb6b7362be798cf97466abafe8241\\transformed\\material-1.6.1\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\1b1fb6b7362be798cf97466abafe8241\\transformed\\material-1.6.1\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -40,24 +40,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\a1fcb37f7f436d4d2aa1435dda17d831\\transformed\\core-1.13.1\\res\\values-sq\\values-sq.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,154,256,354,451,559,670,792",
-                        "endColumns": "98,101,97,96,107,110,121,100",
-                        "endOffsets": "149,251,349,446,554,665,787,888"
-                    },
-                    "to": {
-                        "startLines": "35,36,37,38,39,40,41,116",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "3128,3227,3329,3427,3524,3632,3743,9837",
-                        "endColumns": "98,101,97,96,107,110,121,100",
-                        "endOffsets": "3222,3324,3422,3519,3627,3738,3860,9933"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\617b43c4f3b9fce2cbee0d65e3baf352\\transformed\\jetified-react-android-0.75.2-debug\\res\\values-sq\\values-sq.xml",
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\617b43c4f3b9fce2cbee0d65e3baf352\\transformed\\jetified-react-android-0.75.2-debug\\res\\values-sq\\values-sq.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -71,6 +54,23 @@
                         "startOffsets": "2968,4175,4421,4562,4631,4772,5748,5815,5897,8789,8878,8961,9031,9199,9288,9363,9444,9525,9602,9677,9750,9938,10015,10096,10170",
                         "endColumns": "73,80,70,68,81,68,66,81,83,88,82,69,85,88,74,80,80,76,74,72,86,76,80,73,82",
                         "endOffsets": "3037,4251,4487,4626,4708,4836,5810,5892,5976,8873,8956,9026,9112,9283,9358,9439,9520,9597,9672,9745,9832,10010,10091,10165,10248"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\a1fcb37f7f436d4d2aa1435dda17d831\\transformed\\core-1.13.1\\res\\values-sq\\values-sq.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,154,256,354,451,559,670,792",
+                        "endColumns": "98,101,97,96,107,110,121,100",
+                        "endOffsets": "149,251,349,446,554,665,787,888"
+                    },
+                    "to": {
+                        "startLines": "35,36,37,38,39,40,41,116",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "3128,3227,3329,3427,3524,3632,3743,9837",
+                        "endColumns": "98,101,97,96,107,110,121,100",
+                        "endOffsets": "3222,3324,3422,3519,3627,3738,3860,9933"
                     }
                 }
             ]

@@ -6,76 +6,7 @@ import { DailyReport } from '../../../types';
 import { fieldVisitService } from '../../reports/FieldVisitService';
 
 const getInitialMockReports = (): DailyReport[] => {
-  return [
-    {
-      id: 'dr-100',
-      managerId: 'mgr-000',
-      date: '2026-09-22',
-      workSummary: 'Routine vendor store visits and verification of catalog inventory across Parrys & Kilpauk.',
-      vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
-        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
-      ],
-      shopsVisitedCount: 2,
-      issuesFollowUp: 'No major issues reported during yesterday visits.',
-      additionalNotes: 'Follow-up scheduled with regional logistics coordinator.',
-      status: 'SUBMITTED',
-      createdAt: '2026-09-22T18:00:00.000Z',
-      updatedAt: '2026-09-22T18:00:00.000Z',
-    },
-    {
-      id: 'dr-101',
-      managerId: 'mgr-000',
-      date: '2026-09-23',
-      workSummary: 'Completed vendor follow-ups and reviewed pending payment issues with Sri Foods and Fresh Mart.',
-      vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
-        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
-        { vendorId: 'v-103', vendorName: 'Fresh Mart Supermarket', location: 'Kilpauk, Chennai' },
-        { vendorId: 'v-104', vendorName: 'Royal Electronics & Mobile', location: 'Adyar, Chennai' },
-        { vendorId: 'v-106', vendorName: 'Kovai Spices & Organics', location: 'Gandhipuram, Coimbatore' },
-      ],
-      shopsVisitedCount: 5,
-      issuesFollowUp: 'Followed up on Sri Foods invoice payout verification and POS display issues.',
-      additionalNotes: 'All 5 scheduled vendor visits completed for the day.',
-      status: 'SUBMITTED',
-      createdAt: '2026-09-23T18:00:00.000Z',
-      updatedAt: '2026-09-23T18:00:00.000Z',
-    },
-    {
-      id: 'dr-102',
-      managerId: 'mgr-000',
-      date: '2026-09-20',
-      workSummary: 'Conducted field audits and onboarded new retail vendors in the Chennai North division.',
-      vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
-        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
-        { vendorId: 'v-103', vendorName: 'Fresh Mart Supermarket', location: 'Kilpauk, Chennai' },
-      ],
-      shopsVisitedCount: 3,
-      issuesFollowUp: 'Assisted ABC Traders with catalog sync support.',
-      additionalNotes: 'Verified documentation for GST tax invoices.',
-      status: 'SUBMITTED',
-      createdAt: '2026-09-20T18:00:00.000Z',
-      updatedAt: '2026-09-20T18:00:00.000Z',
-    },
-    {
-      id: 'dr-103',
-      managerId: 'mgr-000',
-      date: '2026-09-10',
-      workSummary: 'Monthly planning meeting and territory coverage assessment for Q3 targets.',
-      vendorsVisited: [
-        { vendorId: 'v-104', vendorName: 'Royal Electronics & Mobile', location: 'Adyar, Chennai' },
-        { vendorId: 'v-106', vendorName: 'Kovai Spices & Organics', location: 'Gandhipuram, Coimbatore' },
-      ],
-      shopsVisitedCount: 2,
-      issuesFollowUp: 'Logistics delivery delay resolved for Kovai Spices.',
-      additionalNotes: 'Quarterly growth report submitted to Central Operations.',
-      status: 'SUBMITTED',
-      createdAt: '2026-09-10T18:00:00.000Z',
-      updatedAt: '2026-09-10T18:00:00.000Z',
-    },
-  ];
+  return [];
 };
 
 export class MockDailyReportRepository implements IDailyReportRepository {
@@ -97,38 +28,32 @@ export class MockDailyReportRepository implements IDailyReportRepository {
       return { ...found };
     }
 
-
-    // Dynamic report details generator for any visit log or report ID
+    // Dynamic report details generator for any live visit record
     const visitRecords = await fieldVisitService.getVisitRecords();
     const matchedVisit = visitRecords.find(v => v.id === id);
 
-    const mockTitles: Record<string, string> = {
-      'visit_1700069977654_op_jp9j': 'Sri Murugan Departmental Store',
-      'visit_1700069988123_sk_821a': 'Saravana Bhavan Hotel',
-      'visit_1700069999456_mn_112z': 'Annapoorna Sweets & Bakery',
-    };
+    if (!matchedVisit) {
+      return null;
+    }
 
-    const shopTitle = matchedVisit?.shopName || mockTitles[id] || 'Field Visit Audit Log';
-    const shopLocation = matchedVisit?.location || 'Salem (636102)';
+    const shopTitle = matchedVisit.shopName || 'Field Visit Audit Log';
+    const shopLocation = matchedVisit.location || '';
 
     return {
       id: id,
-      managerId: 'mgr-001',
-      managerName: 'Ramesh Kumar',
-      date: '2026-09-24',
-      workSummary: `Verified operational catalog compliance, storefront GPS geotagging, and merchant onboarding details for ${shopTitle}. All documentation and tax invoices verified cleanly.`,
-      shopsVisitedCount: 4,
+      managerId: matchedVisit.managerName || 'mgr-000',
+      managerName: matchedVisit.managerName || 'Field Manager',
+      date: new Date().toISOString().split('T')[0],
+      workSummary: `Verified operational catalog compliance, storefront GPS geotagging, and merchant onboarding details for ${shopTitle}.`,
+      shopsVisitedCount: 1,
       vendorsVisited: [
-        { vendorId: 'v-101', vendorName: shopTitle, location: shopLocation },
-        { vendorId: 'v-102', vendorName: 'Sri Lakshmi Enterprises', location: 'Salem (636102)' },
-        { vendorId: 'v-103', vendorName: 'Vasanth & Co Retail Store', location: 'Coimbatore (641001)' },
+        { vendorId: matchedVisit.id, vendorName: shopTitle, location: shopLocation },
       ],
-      issuesFollowUp: 'No pending payment or catalog issues. Merchant confirmed positive interest.',
-      additionalNotes: 'Field audit completed with GPS coordinates 11.6643° N, 78.1460° E. Voice note memo recorded.',
-      voiceUrl: 'mock_audio_note.mp3',
-      voiceDurationSeconds: 15,
-      photo1Url: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-      photo2Url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
+      issuesFollowUp: matchedVisit.isInterested ? 'Merchant interested in onboarding.' : (matchedVisit.reasonNotInterested || 'Not interested'),
+      additionalNotes: `Field audit recorded at ${matchedVisit.gpsCoords || 'N/A'}.`,
+      voiceUrl: matchedVisit.voiceNoteUri,
+      voiceDurationSeconds: matchedVisit.voiceNoteDuration,
+      photo1Url: matchedVisit.photoUrl,
       status: 'SUBMITTED',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

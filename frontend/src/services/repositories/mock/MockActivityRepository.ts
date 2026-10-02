@@ -2,39 +2,9 @@
  * Mock Implementation of IActivityRepository for Auto-Activities & Exception Reports
  */
 import { IActivityRepository } from '../IActivityRepository';
-import { Activity, ActivityType, Report, ReportType } from '../../../types';
+import { Activity, Report, ReportType } from '../../../types';
 
-const INITIAL_MOCK_ACTIVITIES: Activity[] = [
-  {
-    id: 'act-501',
-    managerId: 'mgr-001',
-    activityType: ActivityType.VENDOR_ONBOARDED,
-    entityId: 'v-101',
-    entityName: 'Fresh Mart Supermarket',
-    timestamp: '2026-09-22T10:15:00Z',
-    territory: {
-      stateId: 'st-mp-01',
-      districtId: 'dt-indore-01',
-      divisionId: 'div-north-01',
-      pincodeId: '452001',
-    },
-  },
-  {
-    id: 'act-502',
-    managerId: 'mgr-001',
-    activityType: ActivityType.TASK_COMPLETED,
-    entityId: 't-301',
-    entityName: 'Verify Vendor Store Address',
-    timestamp: '2026-09-22T11:30:00Z',
-    territory: {
-      stateId: 'st-mp-01',
-      districtId: 'dt-indore-01',
-      divisionId: 'div-north-01',
-      pincodeId: '452001',
-    },
-  },
-];
-
+const INITIAL_MOCK_ACTIVITIES: Activity[] = [];
 const INITIAL_MOCK_REPORTS: Report[] = [];
 
 export class MockActivityRepository implements IActivityRepository {
@@ -95,10 +65,10 @@ export class MockActivityRepository implements IActivityRepository {
       entityName: payload.entityName,
       timestamp: new Date().toISOString(),
       territory: {
-        stateId: payload.stateId || 'st-mp-01',
-        districtId: payload.districtId || 'dt-indore-01',
-        divisionId: payload.divisionId || 'div-north-01',
-        pincodeId: payload.pincodeId || '452001',
+        stateId: payload.stateId || 'st-tn-01',
+        districtId: payload.districtId || 'dt-chn-01',
+        divisionId: payload.divisionId || 'div-chn-central',
+        pincodeId: payload.pincodeId || '600001',
       },
     };
     this.activities.unshift(activity);

@@ -27,8 +27,21 @@
         android:name="android.hardware.camera.autofocus"
         android:required="false" />
 
-    <!-- Queries for document viewers and sharing intents on Android 11+ (API 30+) -->
+    <!-- Queries for camera, document viewers, and sharing intents on Android 11+ (API 30+) -->
     <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+
+            <data android:mimeType="image/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+
+            <data android:mimeType="image/*" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
 

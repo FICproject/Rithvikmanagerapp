@@ -4,24 +4,7 @@
             "outputFile": "com.ficmanagerapp-mergeDebugResources-34:/values-as/values-as.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\a1fcb37f7f436d4d2aa1435dda17d831\\transformed\\core-1.13.1\\res\\values-as\\values-as.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,156,259,367,472,576,676,805",
-                        "endColumns": "100,102,107,104,103,99,128,100",
-                        "endOffsets": "151,254,362,467,571,671,800,901"
-                    },
-                    "to": {
-                        "startLines": "34,35,36,37,38,39,40,95",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "3097,3198,3301,3409,3514,3618,3718,8074",
-                        "endColumns": "100,102,107,104,103,99,128,100",
-                        "endOffsets": "3193,3296,3404,3509,3613,3713,3842,8170"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\9b599ce3ec670349f20e4c5da34b6a35\\transformed\\appcompat-1.6.1\\res\\values-as\\values-as.xml",
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\9b599ce3ec670349f20e4c5da34b6a35\\transformed\\appcompat-1.6.1\\res\\values-as\\values-as.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -38,7 +21,24 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\1b1fb6b7362be798cf97466abafe8241\\transformed\\material-1.6.1\\res\\values-as\\values-as.xml",
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\a1fcb37f7f436d4d2aa1435dda17d831\\transformed\\core-1.13.1\\res\\values-as\\values-as.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,156,259,367,472,576,676,805",
+                        "endColumns": "100,102,107,104,103,99,128,100",
+                        "endOffsets": "151,254,362,467,571,671,800,901"
+                    },
+                    "to": {
+                        "startLines": "34,35,36,37,38,39,40,95",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "3097,3198,3301,3409,3514,3618,3718,8074",
+                        "endColumns": "100,102,107,104,103,99,128,100",
+                        "endOffsets": "3193,3296,3404,3509,3613,3713,3842,8170"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\DINESH K\\.gradle\\caches\\8.8\\transforms\\1b1fb6b7362be798cf97466abafe8241\\transformed\\material-1.6.1\\res\\values-as\\values-as.xml",
                     "from": {
                         "startLines": "2,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",

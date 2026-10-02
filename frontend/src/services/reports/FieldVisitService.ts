@@ -6,81 +6,7 @@
 import { VisitRecord, Vendor, Manager, VendorStatus } from '../../types';
 import { IVendorRepository } from '../repositories/IVendorRepository';
 
-const INITIAL_VISIT_RECORDS: VisitRecord[] = [
-  {
-    id: 'visit_1700070001001_today_01',
-    shopName: 'Sri Foods & Groceries',
-    vendorCode: 'vendorSRIFOODS',
-    category: 'Daily Needs',
-    managerName: 'Ramesh Kumar',
-    managerRole: 'State Manager',
-    location: 'Parrys, Chennai',
-    pincode: '600001',
-    timestamp: 'Today, 10:15 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
-    gpsCoords: '13.0891° N, 80.2872° E',
-  },
-  {
-    id: 'visit_1700070002002_today_02',
-    shopName: 'Apex Mobile & Electronics',
-    vendorCode: 'vendorAPEXMOB',
-    category: 'Product',
-    managerName: 'M. Selvi',
-    managerRole: 'Pincode Manager',
-    location: 'Parrys, Chennai',
-    pincode: '600001',
-    timestamp: 'Today, 11:30 AM',
-    isInterested: false,
-    reasonNotInterested: 'Owner currently committed to a separate 1-year POS contract with another payment aggregator.',
-    voiceNoteUri: 'file:///data/user/0/com.ficmanagerapp/cache/audio_sample_declined.m4a',
-    voiceNoteDuration: 18,
-    photoUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
-    gpsCoords: '13.0880° N, 80.2860° E',
-  },
-  {
-    id: 'visit_1700069977654_op_jp9j',
-    shopName: 'Sri Murugan Departmental Store',
-    vendorCode: 'vendorMURUGAN',
-    category: 'Product',
-    managerName: 'K. Ananth',
-    managerRole: 'Division Manager',
-    location: 'North Chennai',
-    pincode: '600001',
-    timestamp: '28 Sep 2026, 08:30 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-    gpsCoords: '13.0827° N, 80.2707° E',
-  },
-  {
-    id: 'visit_1700069988123_sk_821a',
-    shopName: 'Saravana Bhavan Hotel',
-    vendorCode: 'vendorSARAVANA',
-    category: 'Food',
-    managerName: 'Suresh Menon',
-    managerRole: 'District Manager',
-    location: 'Chennai',
-    pincode: '600002',
-    timestamp: '29 Sep 2026, 10:15 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
-    gpsCoords: '13.0604° N, 80.2496° E',
-  },
-  {
-    id: 'visit_1700069999456_mn_112z',
-    shopName: 'Annapoorna Sweets & Bakery',
-    vendorCode: 'vendorANNAPOORNA',
-    category: 'Food',
-    managerName: 'Ramesh Kumar',
-    managerRole: 'State Manager',
-    location: 'Coimbatore',
-    pincode: '641001',
-    timestamp: '30 Sep 2026, 02:45 PM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400',
-    gpsCoords: '11.0168° N, 76.9558° E',
-  },
-];
+const INITIAL_VISIT_RECORDS: VisitRecord[] = [];
 
 export interface RecordVendorVisitParams {
   vendor: Vendor;
@@ -118,7 +44,7 @@ export class FieldVisitService {
           );
           if (!alreadyRecorded && vendor.id.startsWith('v-')) {
             const cleanBusinessName = vendor.businessName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8);
-            const managerName = vendor.assignedManager ? vendor.assignedManager.split('(')[0].trim() : 'Ramesh Kumar';
+            const managerName = vendor.assignedManager ? vendor.assignedManager.split('(')[0].trim() : 'Field Manager';
             const managerRole = vendor.assignedManager && vendor.assignedManager.includes('(')
               ? vendor.assignedManager.split('(')[1].replace(')', '').trim()
               : 'Division Manager';
@@ -130,12 +56,12 @@ export class FieldVisitService {
               category: vendor.category || 'Products',
               managerName,
               managerRole,
-              location: vendor.locationDistrict || vendor.address || 'Dharmapuri',
-              pincode: vendor.pincodeId || '636701',
-              timestamp: 'Today, 03:56 PM',
+              location: vendor.locationDistrict || vendor.address || '',
+              pincode: vendor.pincodeId || '',
+              timestamp: 'Today, Just now',
               isInterested: vendor.status !== VendorStatus.NOT_INTERESTED,
               photoUrl: vendor.shopPhotoUrl || vendor.logoUrl || (vendor as any).photoUrl || 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-              gpsCoords: '12.1211° N, 78.1582° E',
+              gpsCoords: vendor.latitude && vendor.longitude ? `${vendor.latitude}° N, ${vendor.longitude}° E` : '',
             });
 
             // Also make available for daily report
@@ -178,17 +104,17 @@ export class FieldVisitService {
       shopName: vendor.businessName,
       vendorCode,
       category: vendor.category || 'Products',
-      managerName: manager?.name || 'Ramesh Kumar',
+      managerName: manager?.name || 'Field Manager',
       managerRole: manager?.role
         ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         : 'Division Manager',
-      location: vendor.locationDistrict || vendor.address || 'Dharmapuri',
-      pincode: vendor.pincodeId || '636701',
+      location: vendor.locationDistrict || vendor.address || '',
+      pincode: vendor.pincodeId || '',
       timestamp: dateFormatted,
       isInterested: isInterested && vendor.status !== VendorStatus.NOT_INTERESTED,
       photoUrl: photoUrl || vendor.shopPhotoUrl || vendor.logoUrl || (vendor as any).photoUrl || 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
       reasonNotInterested: reason,
-      gpsCoords: gpsCoords || '12.1211° N, 78.1582° E',
+      gpsCoords: gpsCoords || (vendor.latitude && vendor.longitude ? `${vendor.latitude}° N, ${vendor.longitude}° E` : ''),
       voiceNoteDuration,
     };
 

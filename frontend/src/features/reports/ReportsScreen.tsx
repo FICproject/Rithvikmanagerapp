@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,26 +12,23 @@ import {
   TextInput,
   Image,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../../hooks/useAuth';
 import { FICHeader } from '../../components/ui/FICHeader';
-import { FICAvatar } from '../../components/ui/FICAvatar';
+import { FICCard } from '../../components/ui/FICCard';
 import { FICDropdownModal } from '../../components/ui/FICDropdownModal';
 import { FICImageUploadModal } from '../../components/ui/FICImageUploadModal';
 import { FICAudioPlayerRecorder } from '../../components/ui/FICAudioPlayerRecorder';
-import { FieldActionButtons } from '../../components/ui/FieldActionButtons';
 import { theme } from '../../theme';
-import { ASSETS } from '../../assets/logo';
+import { FICEmptyState } from '../../components/feedback/FICEmptyState';
 import { services } from '../../services';
 import { cameraLocationService } from '../../services/camera/CameraLocationService';
+import { googleMapsLocationService } from '../../services/maps';
 import { reportExportService } from '../../services/reports/ReportExportService';
 import { ExportResult } from '../../services/reports/IReportExportService';
-import { VisitRecord } from '../../types';
-
-const assets: any = ASSETS;
+import { ManagerRole, VisitRecord } from '../../types';
 
 export interface ReportsScreenProps {
   initialTab?: string;
@@ -39,100 +36,110 @@ export interface ReportsScreenProps {
   onNavigateRoute?: (routeName: string, params?: Record<string, any>) => void;
 }
 
+type ReportScopeFilter = 'ALL' | 'MY' | 'EQUAL' | 'SUBORDINATE';
+type ReportTierFilter = 'ALL' | ManagerRole;
 
-
-const INITIAL_VISIT_RECORDS: VisitRecord[] = [
-  {
-    id: 'visit_1700070001001_today_01',
-    shopName: 'Sri Foods & Groceries',
-    vendorCode: 'vendorSRIFOODS',
-    category: 'Daily Needs',
-    managerName: 'Ramesh Kumar',
-    managerRole: 'State Manager',
-    location: 'Parrys, Chennai',
-    pincode: '600001',
-    timestamp: 'Today, 10:15 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
-    gpsCoords: '13.0891° N, 80.2872° E',
-  },
-  {
-    id: 'visit_1700070002002_today_02',
-    shopName: 'Apex Mobile & Electronics',
-    vendorCode: 'vendorAPEXMOB',
-    category: 'Product',
-    managerName: 'M. Selvi',
-    managerRole: 'Pincode Manager',
-    location: 'Parrys, Chennai',
-    pincode: '600001',
-    timestamp: 'Today, 11:30 AM',
-    isInterested: false,
-    reasonNotInterested: 'Owner currently committed to a separate 1-year POS contract with another payment aggregator.',
-    voiceNoteUri: 'file:///data/user/0/com.ficmanagerapp/cache/audio_sample_declined.m4a',
-    voiceNoteDuration: 18,
-    photoUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
-    gpsCoords: '13.0880° N, 80.2860° E',
-  },
-  {
-    id: 'visit_1700069977654_op_jp9j',
-    shopName: 'Sri Murugan Departmental Store',
-    vendorCode: 'vendorMURUGAN',
-    category: 'Product',
-    managerName: 'K. Ananth',
-    managerRole: 'Division Manager',
-    location: 'North Chennai',
-    pincode: '600001',
-    timestamp: '28 Sep 2026, 08:30 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-    gpsCoords: '13.0827° N, 80.2707° E',
-  },
-  {
-    id: 'visit_1700069988123_sk_821a',
-    shopName: 'Saravana Bhavan Hotel',
-    vendorCode: 'vendorSARAVANA',
-    category: 'Food',
-    managerName: 'Suresh Menon',
-    managerRole: 'District Manager',
-    location: 'Chennai',
-    pincode: '600002',
-    timestamp: '29 Sep 2026, 10:15 AM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
-    gpsCoords: '13.0604° N, 80.2496° E',
-  },
-  {
-    id: 'visit_1700069999456_mn_112z',
-    shopName: 'Annapoorna Sweets & Bakery',
-    vendorCode: 'vendorANNAPOORNA',
-    category: 'Food',
-    managerName: 'Ramesh Kumar',
-    managerRole: 'State Manager',
-    location: 'Coimbatore',
-    pincode: '641001',
-    timestamp: '30 Sep 2026, 02:45 PM',
-    isInterested: true,
-    photoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400',
-    gpsCoords: '11.0168° N, 76.9558° E',
-  },
-];
+const INITIAL_VISIT_RECORDS: VisitRecord[] = [];
 
 export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   onOpenDrawer,
   onNavigateRoute,
 }) => {
-  const { manager } = useAuth();
-
-  // Primary Visit Records List
+  const { manager: authManager } = useAuth();
   const [records, setRecords] = useState<VisitRecord[]>(INITIAL_VISIT_RECORDS);
-  const [filteredRecords, setFilteredRecords] = useState<VisitRecord[]>(INITIAL_VISIT_RECORDS);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeScope, setActiveScope] = useState<ReportScopeFilter>('ALL');
+  const [activeTier, setActiveTier] = useState<ReportTierFilter>('ALL');
+
+  // Jurisdiction Locking: Users cannot filter/change jurisdictions equal to or above them
+  const userRole = authManager?.role || ManagerRole.STATE_MANAGER;
+  const isDistrictFixed =
+    userRole === ManagerRole.DISTRICT_MANAGER ||
+    userRole === ManagerRole.DIVISION_MANAGER ||
+    userRole === ManagerRole.PINCODE_MANAGER;
+  const isDivisionFixed =
+    userRole === ManagerRole.DIVISION_MANAGER ||
+    userRole === ManagerRole.PINCODE_MANAGER;
+  const isPincodeFixed = userRole === ManagerRole.PINCODE_MANAGER;
+
+  const userDefaultDistrict = authManager?.districtId || (isDistrictFixed ? 'dt-chn-01' : 'ALL');
+  const userDefaultDivision = authManager?.divisionId || (isDivisionFixed ? 'div-chn-central' : 'ALL');
+  const userDefaultPincode = authManager?.pincodeId || '';
+
+  // Hierarchy Filter Modal state
+  const [isFilterModalVisible, setIsFilterModalVisible] = useState<boolean>(false);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>(userDefaultDistrict);
+  const [selectedDivision, setSelectedDivision] = useState<string>(userDefaultDivision);
+  const [pincodeFilterInput, setPincodeFilterInput] = useState<string>(userDefaultPincode);
+
+  // Dropdown Picker Modals
+  const [showDistrictPicker, setShowDistrictPicker] = useState<boolean>(false);
+  const [showDivisionPicker, setShowDivisionPicker] = useState<boolean>(false);
+
+  // Applied filter state
+  const [appliedDistrict, setAppliedDistrict] = useState<string>(userDefaultDistrict);
+  const [appliedDivision, setAppliedDivision] = useState<string>(userDefaultDivision);
+  const [appliedPincode, setAppliedPincode] = useState<string>(userDefaultPincode);
+
+  // Synchronize initial state to jurisdiction
+  useEffect(() => {
+    if (isDistrictFixed) {
+      setSelectedDistrict(userDefaultDistrict);
+      setAppliedDistrict(userDefaultDistrict);
+    }
+    if (isDivisionFixed) {
+      setSelectedDivision(userDefaultDivision);
+      setAppliedDivision(userDefaultDivision);
+    }
+    if (isPincodeFixed) {
+      setPincodeFilterInput(userDefaultPincode);
+      setAppliedPincode(userDefaultPincode);
+    }
+  }, [isDistrictFixed, isDivisionFixed, isPincodeFixed, userDefaultDistrict, userDefaultDivision, userDefaultPincode]);
+
+  // Modals for Actions
+  const [isFieldVisitModalOpen, setIsFieldVisitModalOpen] = useState<boolean>(false);
+  const [isGenerateReportModalOpen, setIsGenerateReportModalOpen] = useState<boolean>(false);
+  const [exportResultModal, setExportResultModal] = useState<ExportResult | null>(null);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportProgressStage, setExportProgressStage] = useState<string>('');
+
+  // Form State for Field Visit
+  const [formShopName, setFormShopName] = useState<string>('');
+  const [formCategory, setFormCategory] = useState<string>('Service');
+  const [formPhotoCaptured, setFormPhotoCaptured] = useState<boolean>(false);
+  const [formPhotoUri, setFormPhotoUri] = useState<string | null>(null);
+  const [formPhotoName, setFormPhotoName] = useState<string | null>(null);
+  const [formAddress, setFormAddress] = useState<string>('Parrys, Chennai');
+  const [formPincode, setFormPincode] = useState<string>('600001');
+  const [formLatitude, setFormLatitude] = useState<number | null>(13.0827);
+  const [formLongitude, setFormLongitude] = useState<number | null>(80.2707);
+  const [formGpsCoords, setFormGpsCoords] = useState<string | null>('13.0827° N, 80.2707° E');
+  const [showStorefrontUploadModal, setShowStorefrontUploadModal] = useState<boolean>(false);
+  const [showFormCategoryModal, setShowFormCategoryModal] = useState<boolean>(false);
+  const [showFormReasonModal, setShowFormReasonModal] = useState<boolean>(false);
+  const [formInterestStatus, setFormInterestStatus] = useState<'NONE' | 'YES' | 'NO'>('NONE');
+  const [formNotInterestedReason, setFormNotInterestedReason] = useState<string>('Not interested in digital onboarding');
+  const [isRecordingVoice, setIsRecordingVoice] = useState<boolean>(false);
+  const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
+  const [voiceDuration, setVoiceDuration] = useState<number>(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Report Export Form State
+  const [reportDateRange, setReportDateRange] = useState<string>('THIS_MONTH');
+  const [reportFormat, setReportFormat] = useState<string>('PDF');
 
   const loadVisitRecords = useCallback(async () => {
     try {
       const list = await services.fieldVisitService.getVisitRecords();
-      setRecords(list);
+      if (list && list.length > 0) {
+        setRecords(list);
+      }
     } catch {
-      // Keep existing
+      // Keep existing initial records
     }
   }, []);
 
@@ -140,118 +147,271 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     loadVisitRecords();
   }, [loadVisitRecords]);
 
-  // Tab & Filters
-  const [activeScopeTab, setActiveScopeTab] = useState<'ALL' | 'MY' | 'DIVISION' | 'PINCODE'>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL');
-  const [selectedInterestFilter, setSelectedInterestFilter] = useState<string>('ALL');
-
-  // UI Loaders
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-
-  // Modals
-  const [isFieldVisitModalOpen, setIsFieldVisitModalOpen] = useState<boolean>(false);
-  const [isGenerateReportModalOpen, setIsGenerateReportModalOpen] = useState<boolean>(false);
-  const [showCategoryFilterModal, setShowCategoryFilterModal] = useState<boolean>(false);
-  const [showStatusFilterModal, setShowStatusFilterModal] = useState<boolean>(false);
-  const [showFormCategoryModal, setShowFormCategoryModal] = useState<boolean>(false);
-  const [showFormReasonModal, setShowFormReasonModal] = useState<boolean>(false);
-
-  // Form State for + Field Shop Visit
-  const [formShopName, setFormShopName] = useState<string>('');
-  const [formCategory, setFormCategory] = useState<string>('Service');
-  const [formPhotoCaptured, setFormPhotoCaptured] = useState<boolean>(false);
-  const [formPhotoUri, setFormPhotoUri] = useState<string | null>(null);
-  const [formPhotoName, setFormPhotoName] = useState<string | null>(null);
-  const [formGpsCoords, setFormGpsCoords] = useState<string | null>(null);
-  const [showStorefrontUploadModal, setShowStorefrontUploadModal] = useState<boolean>(false);
-  const [formInterestStatus, setFormInterestStatus] = useState<'NONE' | 'YES' | 'NO'>('NONE');
-  const [formNotInterestedReason, setFormNotInterestedReason] = useState<string>('Not interested in digital onboarding');
-
-  // Voice Recording state for Not Interested flow
-  const [isRecordingVoice, setIsRecordingVoice] = useState<boolean>(false);
-  const [recordedAudioUri, setRecordedAudioUri] = useState<string | null>(null);
-  const [voiceDuration, setVoiceDuration] = useState<number>(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Generate Report Modal Form State
-  const [reportDateRange, setReportDateRange] = useState<string>('THIS_MONTH');
-  const [startDateStr, setStartDateStr] = useState<string>('2026-09-01');
-  const [endDateStr, setEndDateStr] = useState<string>('2026-09-28');
-  const [reportFormat, setReportFormat] = useState<string>('CSV');
-  const [exportResultModal, setExportResultModal] = useState<ExportResult | null>(null);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [exportProgressStage, setExportProgressStage] = useState<string>('');
-
-  // Filter Logic
-  const applyFilters = useCallback(() => {
-    let list = [...records];
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter(
-        r =>
-          r.shopName.toLowerCase().includes(q) ||
-          r.vendorCode.toLowerCase().includes(q) ||
-          r.managerName.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q) ||
-          r.location.toLowerCase().includes(q) ||
-          r.id.toLowerCase().includes(q)
-      );
-    }
-
-    if (selectedCategoryFilter !== 'ALL') {
-      list = list.filter(r => r.category.toLowerCase() === selectedCategoryFilter.toLowerCase());
-    }
-
-    if (selectedInterestFilter === 'INTERESTED') {
-      list = list.filter(r => r.isInterested);
-    } else if (selectedInterestFilter === 'NOT_INTERESTED') {
-      list = list.filter(r => !r.isInterested);
-    }
-
-    if (activeScopeTab === 'MY') {
-      const currentName = manager?.name || 'Manager';
-      list = list.filter(r => r.managerName.toLowerCase().includes(currentName.toLowerCase()));
-    } else if (activeScopeTab === 'DIVISION') {
-      list = list.filter(r => r.managerRole.includes('Division'));
-    } else if (activeScopeTab === 'PINCODE') {
-      list = list.filter(r => r.managerRole.includes('Pincode'));
-    }
-
-    setFilteredRecords(list);
-  }, [records, searchQuery, selectedCategoryFilter, selectedInterestFilter, activeScopeTab, manager]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadVisitRecords();
     setIsRefreshing(false);
   };
 
-  // Counters
-  const totalVisitsCount = records.length;
-  const interestedCount = records.filter(r => r.isInterested).length;
-  const notInterestedCount = records.filter(r => !r.isInterested).length;
-
-  // Real Camera & Manual Gallery Photo Capture (No GPS required)
-  const handleCapturePhoto = async (mode: 'camera' | 'gallery' = 'camera') => {
-    try {
-      const result = await cameraLocationService.capturePhotoWithGps(mode);
-      if (result && result.uri) {
-        setFormPhotoUri(result.uri);
-        setFormPhotoName(result.fileName || (mode === 'camera' ? 'Camera_Storefront.jpg' : 'Gallery_Storefront.jpg'));
-        setFormPhotoCaptured(true);
-      }
-    } catch (err: any) {
-      if (err.message && !err.message.includes('No photo')) {
-        console.warn('Storefront photo capture error:', err.message);
-      }
-    }
+  const getRecordManagerRole = (record: VisitRecord): ManagerRole => {
+    const role = (record.managerRole || '').toLowerCase();
+    if (role.includes('pincode')) return ManagerRole.PINCODE_MANAGER;
+    if (role.includes('division')) return ManagerRole.DIVISION_MANAGER;
+    if (role.includes('district')) return ManagerRole.DISTRICT_MANAGER;
+    return ManagerRole.STATE_MANAGER;
   };
+
+  const isMyReport = (record: VisitRecord): boolean => {
+    const myName = (authManager?.name || 'Ramesh').toLowerCase();
+    return (record.managerName || '').toLowerCase().includes(myName);
+  };
+
+  // Scope counts
+  const scopeCounts = useMemo(() => {
+    let myCount = 0;
+    let equalCount = 0;
+    let subCount = 0;
+
+    records.forEach(r => {
+      const role = getRecordManagerRole(r);
+      if (isMyReport(r)) {
+        myCount++;
+      } else if (role === ManagerRole.STATE_MANAGER) {
+        equalCount++;
+      } else {
+        subCount++;
+      }
+    });
+
+    return {
+      all: records.length,
+      my: myCount,
+      equal: equalCount,
+      subordinate: subCount,
+    };
+  }, [records, authManager?.name]);
+
+  // Tier counts
+  const tierCounts = useMemo(() => {
+    const counts = {
+      [ManagerRole.STATE_MANAGER]: 0,
+      [ManagerRole.DISTRICT_MANAGER]: 0,
+      [ManagerRole.DIVISION_MANAGER]: 0,
+      [ManagerRole.PINCODE_MANAGER]: 0,
+    };
+    records.forEach(r => {
+      const role = getRecordManagerRole(r);
+      if (counts[role] !== undefined) {
+        counts[role]++;
+      }
+    });
+    return counts;
+  }, [records]);
+
+  // District & Division dropdown options
+  const districtOptions = [
+    'ALL',
+    'dt-chn-01',
+    'dt-cbe-01',
+    'dt-mdu-01',
+    'dt-try-01',
+    'dt-slm-01',
+    'dt-tnv-01',
+    'dt-vel-01',
+    'dt-erd-01',
+  ];
+
+  const formatDistrictName = (id: string) => {
+    if (id === 'ALL') return 'All Districts (Whole State)';
+    if (id === 'dt-chn-01') return 'Chennai District';
+    if (id === 'dt-cbe-01') return 'Coimbatore District';
+    if (id === 'dt-mdu-01') return 'Madurai District';
+    if (id === 'dt-try-01') return 'Tiruchirappalli District';
+    if (id === 'dt-slm-01') return 'Salem District';
+    if (id === 'dt-tnv-01') return 'Tirunelveli District';
+    if (id === 'dt-vel-01') return 'Vellore District';
+    if (id === 'dt-erd-01') return 'Erode District';
+    return id;
+  };
+
+  const formatDivisionName = (id: string) => {
+    if (id === 'ALL') return 'All Divisions';
+    if (id === 'div-chn-central') return 'Chennai Central Division';
+    if (id === 'div-chn-anna') return 'Anna Nagar Division';
+    if (id === 'div-cbe-gandhi') return 'Gandhipuram Division (Coimbatore)';
+    if (id === 'div-cbe-rspuram') return 'R.S. Puram Division (Coimbatore)';
+    if (id === 'div-mdu-central') return 'Madurai Central Division';
+    if (id === 'div-try-thillai') return 'Thillai Nagar Division (Trichy)';
+    if (id === 'div-slm-sura') return 'Suramangalam Division (Salem)';
+    if (id === 'div-tnv-palayam') return 'Palayamkottai Division (Tirunelveli)';
+    if (id === 'div-vel-katpadi') return 'Katpadi Division (Vellore)';
+    if (id === 'div-erd-perun') return 'Perundurai Division (Erode)';
+    return id;
+  };
+
+  const divisionOptions = useMemo(() => {
+    if (selectedDistrict === 'dt-chn-01') {
+      return ['ALL', 'div-chn-central', 'div-chn-anna'];
+    }
+    if (selectedDistrict === 'dt-cbe-01') {
+      return ['ALL', 'div-cbe-gandhi', 'div-cbe-rspuram'];
+    }
+    if (selectedDistrict === 'dt-mdu-01') {
+      return ['ALL', 'div-mdu-central'];
+    }
+    if (selectedDistrict === 'dt-try-01') {
+      return ['ALL', 'div-try-thillai'];
+    }
+    if (selectedDistrict === 'dt-slm-01') {
+      return ['ALL', 'div-slm-sura'];
+    }
+    if (selectedDistrict === 'dt-tnv-01') {
+      return ['ALL', 'div-tnv-palayam'];
+    }
+    if (selectedDistrict === 'dt-vel-01') {
+      return ['ALL', 'div-vel-katpadi'];
+    }
+    if (selectedDistrict === 'dt-erd-01') {
+      return ['ALL', 'div-erd-perun'];
+    }
+    return [
+      'ALL',
+      'div-chn-central',
+      'div-chn-anna',
+      'div-cbe-gandhi',
+      'div-cbe-rspuram',
+      'div-mdu-central',
+      'div-try-thillai',
+      'div-slm-sura',
+      'div-tnv-palayam',
+    ];
+  }, [selectedDistrict]);
+
+  const districtDropdownOptions = isDistrictFixed
+    ? [
+        {
+          label: formatDistrictName(userDefaultDistrict),
+          value: userDefaultDistrict,
+          subtitle: 'Assigned Territory (Fixed)',
+        },
+      ]
+    : districtOptions.map(dId => ({
+        label: formatDistrictName(dId),
+        value: dId,
+        subtitle: dId === 'ALL' ? 'Search all reports across state' : `District code: ${dId}`,
+      }));
+
+  const divisionDropdownOptions = isDivisionFixed
+    ? [
+        {
+          label: formatDivisionName(userDefaultDivision),
+          value: userDefaultDivision,
+          subtitle: 'Assigned Territory (Fixed)',
+        },
+      ]
+    : divisionOptions.map(divId => ({
+        label: formatDivisionName(divId),
+        value: divId,
+        subtitle: divId === 'ALL' ? 'Search all reports in district' : `Division code: ${divId}`,
+      }));
+
+  // Filtered Records
+  const filteredRecords = useMemo(() => {
+    return records.filter(r => {
+      const role = getRecordManagerRole(r);
+      const isMine = isMyReport(r);
+
+      // 1. Scope filter
+      if (activeScope === 'MY') {
+        if (!isMine) return false;
+      } else if (activeScope === 'EQUAL') {
+        if (role !== ManagerRole.STATE_MANAGER || isMine) return false;
+      } else if (activeScope === 'SUBORDINATE') {
+        if (role === ManagerRole.STATE_MANAGER) return false;
+      }
+
+      // 2. Tier filter
+      if (activeTier !== 'ALL' && role !== activeTier) {
+        return false;
+      }
+
+      // 3. Applied District filter
+      if (appliedDistrict !== 'ALL') {
+        const dLabel = formatDistrictName(appliedDistrict).replace(' District', '').toLowerCase();
+        const inLoc = r.location.toLowerCase().includes(dLabel);
+        const inAddr = r.address ? r.address.toLowerCase().includes(dLabel) : false;
+        if (!inLoc && !inAddr) {
+          return false;
+        }
+      }
+
+      // 4. Applied Division filter
+      if (appliedDivision !== 'ALL') {
+        const divLabel = formatDivisionName(appliedDivision).replace(' Division', '').toLowerCase();
+        const inLoc = r.location.toLowerCase().includes(divLabel);
+        const inAddr = r.address ? r.address.toLowerCase().includes(divLabel) : false;
+        if (!inLoc && !inAddr) {
+          return false;
+        }
+      }
+
+      // 5. Applied Pincode filter
+      if (appliedPincode.trim().length > 0) {
+        const pinTerm = appliedPincode.trim();
+        if (!r.pincode || !r.pincode.includes(pinTerm)) {
+          if (!r.address || !r.address.includes(pinTerm)) return false;
+        }
+      }
+
+      // 6. Search query
+      if (searchQuery.trim().length > 0) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchShop = r.shopName.toLowerCase().includes(q);
+        const matchMgr = r.managerName.toLowerCase().includes(q);
+        const matchLoc = r.location.toLowerCase().includes(q);
+        const matchPin = r.pincode.toLowerCase().includes(q);
+        const matchCat = r.category.toLowerCase().includes(q);
+        if (!matchShop && !matchMgr && !matchLoc && !matchPin && !matchCat) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    records,
+    activeScope,
+    activeTier,
+    appliedDistrict,
+    appliedDivision,
+    appliedPincode,
+    searchQuery,
+    authManager?.name,
+  ]);
+
+  const handleApplyFilters = () => {
+    setAppliedDistrict(selectedDistrict);
+    setAppliedDivision(selectedDivision);
+    setAppliedPincode(pincodeFilterInput);
+    setIsFilterModalVisible(false);
+  };
+
+  const handleResetFilters = () => {
+    const defaultDist = isDistrictFixed ? userDefaultDistrict : 'ALL';
+    const defaultDiv = isDivisionFixed ? userDefaultDivision : 'ALL';
+    const defaultPin = isPincodeFixed ? userDefaultPincode : '';
+
+    setSelectedDistrict(defaultDist);
+    setSelectedDivision(defaultDiv);
+    setPincodeFilterInput(defaultPin);
+    setAppliedDistrict(defaultDist);
+    setAppliedDivision(defaultDiv);
+    setAppliedPincode(defaultPin);
+    setIsFilterModalVisible(false);
+  };
+
+  const hasActiveFilters =
+    appliedDistrict !== 'ALL' || appliedDivision !== 'ALL' || appliedPincode.trim().length > 0;
 
   // Voice Note Timer
   useEffect(() => {
@@ -268,57 +428,73 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
     };
   }, [isRecordingVoice]);
 
-  const handleToggleVoiceRecording = () => {
-    if (!isRecordingVoice) {
-      setIsRecordingVoice(true);
-      setRecordedAudioUri(null);
-    } else {
-      setIsRecordingVoice(false);
-      setRecordedAudioUri('mock_audio_note.m4a');
+  const handleCapturePhoto = async (mode: 'camera' | 'gallery' = 'camera') => {
+    try {
+      const result = await cameraLocationService.capturePhotoWithGps(mode);
+      if (result && result.uri) {
+        setFormPhotoUri(result.uri);
+        setFormPhotoName(result.fileName || (mode === 'camera' ? 'Camera_Storefront.jpg' : 'Gallery_Storefront.jpg'));
+        setFormPhotoCaptured(true);
+      }
+    } catch {
+      // Photo capture canceled
     }
   };
 
-  // Submit "+ Field Shop Visit" -> YES (Interested)
-  const handleProceedToOnboarding = () => {
-    const shopName = formShopName.trim() || 'New Store';
-    const category = formCategory || 'Service';
-    const photoUri = formPhotoUri;
-    const gpsCoords = formGpsCoords || undefined;
+  const resetVisitForm = () => {
+    setFormShopName('');
+    setFormCategory('Service');
+    setFormPhotoCaptured(false);
+    setFormPhotoUri(null);
+    setFormPhotoName(null);
+    setFormInterestStatus('NONE');
+    setFormNotInterestedReason('Not interested in digital onboarding');
+    setIsRecordingVoice(false);
+    setRecordedAudioUri(null);
+    setVoiceDuration(0);
+  };
 
-    // Immediately close modal & reset form
-    setIsFieldVisitModalOpen(false);
-    resetVisitForm();
-
-    // Immediately navigate to 5-step Vendor Registration / Onboarding form
-    if (onNavigateRoute) {
-      onNavigateRoute('AddVendor', {
-        initialBusinessName: shopName,
-        initialCategory: category,
-        initialPhotoUri: photoUri || undefined,
-      });
+  const handleProceedToOnboarding = async () => {
+    if (!formShopName.trim()) {
+      Alert.alert('Shop Name Required', 'Please enter the Shop Name / Business Title before proceeding.');
+      return;
+    }
+    if (!formPhotoCaptured || !formPhotoUri) {
+      Alert.alert('Storefront Photo Required', 'Please attach or upload a storefront photo before proceeding.');
+      return;
     }
 
-    // Save field visit record in background
+    let uploadedPhotoUrl = formPhotoUri;
+    try {
+      uploadedPhotoUrl = await services.mediaUploadService.uploadShopPhoto(formPhotoUri);
+    } catch (e) {
+      console.warn('Photo upload warning:', e);
+    }
+
     const newRecord: VisitRecord = {
       id: `visit_${Date.now()}_op_${Math.random().toString(36).substring(2, 6)}`,
-      shopName,
-      vendorCode: `vendor${shopName.replaceAll(/\s+/g, '').toUpperCase().slice(0, 8)}`,
-      category,
-      managerName: manager?.name || 'Manager',
-      managerRole: manager?.role ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Manager',
-      location: 'Salem',
-      pincode: '636102',
+      shopName: formShopName.trim(),
+      vendorCode: `vendor${formShopName.replaceAll(/\s+/g, '').toUpperCase().slice(0, 8)}`,
+      category: formCategory,
+      managerName: authManager?.name || 'Ramesh Kumar',
+      managerRole: authManager?.role ? authManager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'State Manager',
+      location: authManager?.territoryName || 'Chennai, Tamil Nadu',
+      pincode: authManager?.pincodeId || '600001',
       timestamp: 'Just now',
       isInterested: true,
-      photoUrl: photoUri || undefined,
-      gpsCoords,
+      photoUrl: uploadedPhotoUrl,
+      gpsCoords: formGpsCoords || undefined,
     };
 
     setRecords(prev => [newRecord, ...prev]);
-    services.fieldVisitService.addVisitRecord(newRecord).catch(() => {});
+    setIsFieldVisitModalOpen(false);
+    resetVisitForm();
+
+    if (onNavigateRoute) {
+      onNavigateRoute('AddVendor', { initialBusinessName: formShopName.trim(), initialCategory: formCategory });
+    }
   };
 
-  // Submit "+ Field Shop Visit" -> NO (Not Interested)
   const handleSubmitNotInterestedRecord = async () => {
     if (!formShopName.trim()) {
       Alert.alert('Shop Name Required', 'Please enter the Shop Name / Business Title.');
@@ -343,24 +519,15 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       console.warn('Photo upload warning:', e);
     }
 
-    let uploadedAudioUrl: string | null = null;
-    if (recordedAudioUri) {
-      try {
-        uploadedAudioUrl = await services.mediaUploadService.uploadAudioReport(recordedAudioUri);
-      } catch (e) {
-        console.warn('Audio upload warning:', e);
-      }
-    }
-
     const newRecord: VisitRecord = {
       id: `visit_${Date.now()}_op_${Math.random().toString(36).substring(2, 6)}`,
       shopName: formShopName.trim(),
       vendorCode: `vendor${formShopName.replaceAll(/\s+/g, '').toUpperCase().slice(0, 8)}`,
       category: formCategory,
-      managerName: manager?.name || 'Manager',
-      managerRole: manager?.role ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Manager',
-      location: 'Salem',
-      pincode: '636102',
+      managerName: authManager?.name || 'Ramesh Kumar',
+      managerRole: authManager?.role ? authManager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'State Manager',
+      location: authManager?.territoryName || 'Chennai, Tamil Nadu',
+      pincode: authManager?.pincodeId || '600001',
       timestamp: 'Just now',
       isInterested: false,
       photoUrl: uploadedPhotoUrl,
@@ -369,339 +536,629 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
       gpsCoords: formGpsCoords || undefined,
     };
 
-    await services.fieldVisitService.addVisitRecord(newRecord);
     setRecords(prev => [newRecord, ...prev]);
     setIsFieldVisitModalOpen(false);
     resetVisitForm();
-    Alert.alert('Visit Record Submitted', 'Exception visit record logged with audio note and storefront photo. Supervisor notified.');
+    Alert.alert('Visit Record Submitted', 'Exception visit record logged with audio note and storefront photo.');
   };
 
-  const resetVisitForm = () => {
-    setFormShopName('');
-    setFormCategory('Service');
-    setFormPhotoCaptured(false);
-    setFormPhotoUri(null);
-    setFormPhotoName(null);
-    setFormGpsCoords(null);
-    setFormInterestStatus('NONE');
-    setFormNotInterestedReason('Not interested in digital onboarding');
-    setIsRecordingVoice(false);
-    setRecordedAudioUri(null);
-    setVoiceDuration(0);
-  };
-
-  const handleGenerateReportSubmit = async () => {
-    if (isExporting) return;
-
-    if (reportDateRange === 'CUSTOM') {
-      if (!startDateStr || !endDateStr) {
-        Alert.alert('Validation Error', 'Please specify both Start Date and End Date for custom date range.');
-        return;
-      }
-      if (new Date(endDateStr).getTime() < new Date(startDateStr).getTime()) {
-        Alert.alert('Validation Error', 'End Date must be on or after Start Date.');
-        return;
-      }
-    }
-
-    setIsExporting(true);
-    setExportProgressStage('Generating report...');
-
+  const handleExportPDF = async (record: VisitRecord) => {
     try {
       const result = await reportExportService.generateReportFile(
-        records,
+        [record],
         {
-          period: reportDateRange as any,
-          format: reportFormat as any,
-          startDateStr,
-          endDateStr,
-          manager,
+          period: 'THIS_MONTH',
+          format: 'PDF',
+          manager: authManager || undefined,
         },
-        (stage: string) => {
-          setExportProgressStage(stage);
-        }
       );
-
-      setIsExporting(false);
-      setExportProgressStage('');
-      setIsGenerateReportModalOpen(false);
       setExportResultModal(result);
-    } catch (err: any) {
-      console.error('[ReportsScreen] handleGenerateReportSubmit error:', err);
-      setIsExporting(false);
-      setExportProgressStage('');
-      const message = err?.message || 'Unable to download report. Please try again.';
-      Alert.alert('Unable to Download Report', message, [{ text: 'OK' }]);
+    } catch {
+      Alert.alert('Export Error', 'Unable to generate PDF report.');
     }
   };
 
-  const managerDisplayName = manager?.name || 'Manager';
-  const managerDisplayRole = manager?.role
-    ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).replace(/\bManager\b/i, 'Manager')
-    : 'Manager';
-
-  const renderVisitCard = ({ item }: { item: VisitRecord }) => {
-    return (
-      <View style={styles.cardContainer}>
-        <View style={styles.cardHeaderRow}>
-          <Image
-            source={{
-              uri:
-                item.photoUrl ||
-                'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-            }}
-            style={styles.cardShopImage}
-          />
-
-          <View style={styles.cardMainCol}>
-            <View style={styles.cardTitleRow}>
-              <Text style={styles.cardShopTitle} numberOfLines={1}>
-                {item.shopName}
-              </Text>
-              <View
-                style={[
-                  styles.categoryBadge,
-                  item.category === 'Food' ? styles.foodBadgeBg : styles.productsBadgeBg,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.categoryBadgeText,
-                    item.category === 'Food' ? styles.foodBadgeText : styles.productsBadgeText,
-                  ]}
-                >
-                  {item.category}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={styles.vendorCodeText}>{item.vendorCode}</Text>
-
-            <View style={styles.cardMetaRow}>
-              <Icon name="account-outline" size={14} color="#64748B" style={{ marginRight: 3 }} />
-              <Text style={styles.cardMetaText}>
-                {item.managerName} • {item.managerRole}
-              </Text>
-            </View>
-
-            <View style={styles.cardMetaRow}>
-              <Icon name="map-marker-outline" size={14} color="#64748B" style={{ marginRight: 3 }} />
-              <Text style={styles.cardMetaText}>
-                {item.location} ({item.pincode}) • 🕒 {item.timestamp}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.cardFooterRow}>
-          <Text style={styles.visitIdText}>ID: {item.id}</Text>
-          <TouchableOpacity
-            style={styles.reportDetailsBtn}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (onNavigateRoute) {
-                onNavigateRoute('ReportDetail', { reportId: item.id });
-              } else {
-                Alert.alert(
-                  'Visit Record Details',
-                  `Shop: ${item.shopName}\nID: ${item.id}\nStatus: ${
-                    item.isInterested ? 'Interested' : 'Not Interested'
-                  }`
-                );
-              }
-            }}
-          >
-            <Text style={styles.reportDetailsBtnText}>Report Details →</Text>
-          </TouchableOpacity>
-        </View>
-
-        <FieldActionButtons
-          phoneNumber={(item as any).phone || (item as any).contactPhone}
-          latitude={item.gpsCoords ? parseFloat(item.gpsCoords.split(',')[0]) || null : null}
-          longitude={item.gpsCoords ? parseFloat(item.gpsCoords.split(',')[1]) || null : null}
-          titleOrLabel={item.shopName}
-          address={item.location}
-          style={{ marginTop: 8 }}
-        />
-      </View>
-    );
-  };
+  const territoryScopeText = authManager?.territoryName || 'Tamil Nadu (Whole State)';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor={theme.colors.primaryDark} barStyle="light-content" />
+
+      {/* Header */}
       <FICHeader
         title="Reports"
+        subtitle={`Scope: ${territoryScopeText}`}
         leftActionIcon={<Text style={styles.headerIcon}>☰</Text>}
         onLeftAction={onOpenDrawer}
+        rightActionIcon={<Text style={styles.headerIcon}>↻</Text>}
+        onRightAction={handleRefresh}
       />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <FlatList
+        data={filteredRecords}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            colors={['#1D4ED8']}
-            tintColor="#1D4ED8"
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
           />
         }
-      >
-        {/* PAGE TITLE & ACTION BUTTONS */}
-        <View style={styles.titleRow}>
-          <View style={styles.titleTextCol}>
-            <Text style={styles.pageTitle}>Field Visit Reports</Text>
-            <Text style={styles.pageSubtitle}>
-              Territory audit logs, vendor interest & photo verifications
-            </Text>
-          </View>
+        ListHeaderComponent={
+          <View style={styles.headerContentWrapper}>
+            <View style={styles.titleActionRow}>
+              <View>
+                <Text style={styles.headerSubtitle}>Field Visit & Audit Reports</Text>
+                <Text style={styles.scopeBadgeText}>
+                  📍 Scope: {territoryScopeText}
+                </Text>
+              </View>
 
-          <View style={styles.titleActionGroup}>
-            <TouchableOpacity
-              style={styles.primaryActionButton}
-              activeOpacity={0.8}
-              onPress={() => {
-                resetVisitForm();
-                setIsFieldVisitModalOpen(true);
-              }}
-            >
-              <Icon name="plus" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text style={styles.primaryActionButtonText}>Field Visit</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryActionButton}
-              activeOpacity={0.8}
-              onPress={() => setIsGenerateReportModalOpen(true)}
-            >
-              <Icon name="tray-arrow-down" size={16} color="#1D4ED8" style={{ marginRight: 4 }} />
-              <Text style={styles.secondaryActionButtonText}>Export</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* STATS 3 KPI CARDS */}
-        <View style={styles.statsGridRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statCardLabel}>TOTAL VISITS</Text>
-            <Text style={styles.statCardNumber}>{totalVisitsCount}</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={[styles.statCardLabel, { color: '#059669' }]}>INTERESTED</Text>
-            <Text style={[styles.statCardNumber, { color: '#059669' }]}>{interestedCount}</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={[styles.statCardLabel, { color: '#EF4444' }]}>NOT INTERESTED</Text>
-            <Text style={[styles.statCardNumber, { color: '#EF4444' }]}>{notInterestedCount}</Text>
-          </View>
-        </View>
-
-        {/* SEARCH & FILTERS ROW */}
-        <View style={styles.searchFilterRow}>
-          <View style={styles.searchInputContainer}>
-            <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search shop, category, manager..."
-              placeholderTextColor="#94A3B8"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Icon name="close-circle" size={18} color="#94A3B8" />
+              <TouchableOpacity
+                style={styles.newVisitBtn}
+                activeOpacity={0.8}
+                onPress={() => setIsFieldVisitModalOpen(true)}
+              >
+                <Icon name="plus" size={16} color="#FFFFFF" />
+                <Text style={styles.newVisitBtnText}>Field Visit</Text>
               </TouchableOpacity>
-            )}
+            </View>
+
+            {/* Dark Tier Badges Bar */}
+            <View style={styles.darkTierStatsCard}>
+              <TouchableOpacity
+                style={[
+                  styles.darkTierPill,
+                  activeTier === ManagerRole.STATE_MANAGER && styles.darkTierPillSelected,
+                ]}
+                onPress={() =>
+                  setActiveTier(prev =>
+                    prev === ManagerRole.STATE_MANAGER ? 'ALL' : ManagerRole.STATE_MANAGER,
+                  )
+                }
+              >
+                <Icon name="bank" size={14} color="#FBBF24" />
+                <Text style={styles.darkTierPillText}>
+                  L1 State ({tierCounts[ManagerRole.STATE_MANAGER]})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.darkTierPill,
+                  activeTier === ManagerRole.DISTRICT_MANAGER && styles.darkTierPillSelected,
+                ]}
+                onPress={() =>
+                  setActiveTier(prev =>
+                    prev === ManagerRole.DISTRICT_MANAGER ? 'ALL' : ManagerRole.DISTRICT_MANAGER,
+                  )
+                }
+              >
+                <Icon name="office-building" size={14} color="#38BDF8" />
+                <Text style={styles.darkTierPillText}>
+                  L2 District ({tierCounts[ManagerRole.DISTRICT_MANAGER]})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.darkTierPill,
+                  activeTier === ManagerRole.DIVISION_MANAGER && styles.darkTierPillSelected,
+                ]}
+                onPress={() =>
+                  setActiveTier(prev =>
+                    prev === ManagerRole.DIVISION_MANAGER ? 'ALL' : ManagerRole.DIVISION_MANAGER,
+                  )
+                }
+              >
+                <Icon name="layers-outline" size={14} color="#FB923C" />
+                <Text style={styles.darkTierPillText}>
+                  L3 Division ({tierCounts[ManagerRole.DIVISION_MANAGER]})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.darkTierPill,
+                  activeTier === ManagerRole.PINCODE_MANAGER && styles.darkTierPillSelected,
+                ]}
+                onPress={() =>
+                  setActiveTier(prev =>
+                    prev === ManagerRole.PINCODE_MANAGER ? 'ALL' : ManagerRole.PINCODE_MANAGER,
+                  )
+                }
+              >
+                <Icon name="map-marker-outline" size={14} color="#818CF8" />
+                <Text style={styles.darkTierPillText}>
+                  L4 PIN ({tierCounts[ManagerRole.PINCODE_MANAGER]})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Scope Switcher Tabs: All / My Reports / Equal / Subordinate */}
+            <View style={styles.scopeSwitcherRow}>
+              <TouchableOpacity
+                style={[styles.scopeBtn, activeScope === 'ALL' && styles.scopeBtnActive]}
+                onPress={() => setActiveScope('ALL')}
+              >
+                <Text
+                  style={[
+                    styles.scopeBtnText,
+                    activeScope === 'ALL' && styles.scopeBtnTextActive,
+                  ]}
+                >
+                  All ({scopeCounts.all})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.scopeBtn, activeScope === 'MY' && styles.scopeBtnActive]}
+                onPress={() => setActiveScope('MY')}
+              >
+                <Text
+                  style={[
+                    styles.scopeBtnText,
+                    activeScope === 'MY' && styles.scopeBtnTextActive,
+                  ]}
+                >
+                  My ({scopeCounts.my})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.scopeBtn, activeScope === 'EQUAL' && styles.scopeBtnActive]}
+                onPress={() => setActiveScope('EQUAL')}
+              >
+                <Text
+                  style={[
+                    styles.scopeBtnText,
+                    activeScope === 'EQUAL' && styles.scopeBtnTextActive,
+                  ]}
+                >
+                  Equal ({scopeCounts.equal})
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.scopeBtn,
+                  activeScope === 'SUBORDINATE' && styles.scopeBtnActive,
+                ]}
+                onPress={() => setActiveScope('SUBORDINATE')}
+              >
+                <Text
+                  style={[
+                    styles.scopeBtnText,
+                    activeScope === 'SUBORDINATE' && styles.scopeBtnTextActive,
+                  ]}
+                >
+                  Subordinate ({scopeCounts.subordinate})
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Search Input Bar + Filter Trigger Button */}
+            <View style={styles.searchRow}>
+              <View style={styles.searchInputContainer}>
+                <Icon name="magnify" size={20} color="#94A3B8" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search reports by shop, manager, area..."
+                  placeholderTextColor="#94A3B8"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    style={styles.clearBtn}
+                    onPress={() => setSearchQuery('')}
+                  >
+                    <Icon name="close-circle" size={18} color="#94A3B8" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.filterModalTriggerBtn,
+                  hasActiveFilters && styles.filterModalTriggerBtnActive,
+                ]}
+                onPress={() => {
+                  setSelectedDistrict(appliedDistrict);
+                  setSelectedDivision(appliedDivision);
+                  setPincodeFilterInput(appliedPincode);
+                  setIsFilterModalVisible(true);
+                }}
+              >
+                <Icon
+                  name="filter-variant"
+                  size={16}
+                  color={hasActiveFilters ? theme.colors.primary : '#475569'}
+                  style={{ marginRight: 4 }}
+                />
+                <Text
+                  style={[
+                    styles.filterModalTriggerText,
+                    hasActiveFilters && styles.filterModalTriggerTextActive,
+                  ]}
+                >
+                  Filter ▾
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Horizontal Quick Tier Filter Pills */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickTierPillsScroll}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.tierQuickPill,
+                  activeTier === 'ALL' && styles.tierQuickPillActive,
+                ]}
+                onPress={() => setActiveTier('ALL')}
+              >
+                <Text
+                  style={[
+                    styles.tierQuickPillText,
+                    activeTier === 'ALL' && styles.tierQuickPillTextActive,
+                  ]}
+                >
+                  All Tiers
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tierQuickPill,
+                  activeTier === ManagerRole.STATE_MANAGER && styles.tierQuickPillActive,
+                ]}
+                onPress={() => setActiveTier(ManagerRole.STATE_MANAGER)}
+              >
+                <Text
+                  style={[
+                    styles.tierQuickPillText,
+                    activeTier === ManagerRole.STATE_MANAGER && styles.tierQuickPillTextActive,
+                  ]}
+                >
+                  L1 State
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tierQuickPill,
+                  activeTier === ManagerRole.DISTRICT_MANAGER && styles.tierQuickPillActive,
+                ]}
+                onPress={() => setActiveTier(ManagerRole.DISTRICT_MANAGER)}
+              >
+                <Text
+                  style={[
+                    styles.tierQuickPillText,
+                    activeTier === ManagerRole.DISTRICT_MANAGER && styles.tierQuickPillTextActive,
+                  ]}
+                >
+                  L2 District
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tierQuickPill,
+                  activeTier === ManagerRole.DIVISION_MANAGER && styles.tierQuickPillActive,
+                ]}
+                onPress={() => setActiveTier(ManagerRole.DIVISION_MANAGER)}
+              >
+                <Text
+                  style={[
+                    styles.tierQuickPillText,
+                    activeTier === ManagerRole.DIVISION_MANAGER && styles.tierQuickPillTextActive,
+                  ]}
+                >
+                  L3 Division
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tierQuickPill,
+                  activeTier === ManagerRole.PINCODE_MANAGER && styles.tierQuickPillActive,
+                ]}
+                onPress={() => setActiveTier(ManagerRole.PINCODE_MANAGER)}
+              >
+                <Text
+                  style={[
+                    styles.tierQuickPillText,
+                    activeTier === ManagerRole.PINCODE_MANAGER && styles.tierQuickPillTextActive,
+                  ]}
+                >
+                  L4 PIN Code
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        }
+        renderItem={({ item }) => {
+          return (
+            <FICCard style={styles.reportCard}>
+              <View style={styles.cardHeaderRow}>
+                <Image
+                  source={{
+                    uri:
+                      item.photoUrl ||
+                      'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
+                  }}
+                  style={styles.cardShopImage}
+                />
+
+                <View style={styles.cardMainCol}>
+                  <View style={styles.cardTitleRow}>
+                    <Text style={styles.cardShopTitle} numberOfLines={1}>
+                      {item.shopName}
+                    </Text>
+                    <View
+                      style={[
+                        styles.interestBadge,
+                        item.isInterested ? styles.interestYes : styles.interestNo,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.interestBadgeText,
+                          item.isInterested ? styles.interestYesText : styles.interestNoText,
+                        ]}
+                      >
+                        {item.isInterested ? 'Interested' : 'Declined'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.managerRoleText}>
+                    👤 {item.managerName} ({item.managerRole})
+                  </Text>
+
+                  <Text style={styles.cardLocationText}>
+                    📍 {item.location} ({item.pincode}) • 🕒 {item.timestamp}
+                  </Text>
+
+                  {item.reasonNotInterested && (
+                    <Text style={styles.reasonText} numberOfLines={2}>
+                      Note: {item.reasonNotInterested}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Action Buttons Row */}
+              <View style={styles.cardActionsRow}>
+                <TouchableOpacity
+                  style={styles.pdfReportBtn}
+                  onPress={() => handleExportPDF(item)}
+                >
+                  <Icon name="file-pdf-box" size={16} color="#DC2626" />
+                  <Text style={styles.pdfReportBtnText}>PDF Report</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.navigateBtn}
+                  onPress={() => {
+                    googleMapsLocationService.openNavigation(
+                      item.latitude || null,
+                      item.longitude || null,
+                      item.shopName,
+                      item.location,
+                    );
+                  }}
+                >
+                  <Icon name="navigation-variant" size={16} color="#FFFFFF" />
+                  <Text style={styles.navigateBtnText}>Navigate</Text>
+                </TouchableOpacity>
+              </View>
+            </FICCard>
+          );
+        }}
+        ListEmptyComponent={
+          <FICEmptyState
+            title="No Visit Reports Found"
+            description="No reports match the selected hierarchy scope, tier, or filter criteria."
+            actionTitle="Reset All Filters"
+            onAction={handleResetFilters}
+          />
+        }
+      />
+
+      {/* ========================================================================= */}
+      {/* Hierarchy Filter Options Modal with Native Dropdowns                      */}
+      {/* ========================================================================= */}
+      <Modal
+        visible={isFilterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsFilterModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterModalCard}>
+            {/* Modal Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={styles.modalTitle}>Hierarchy Filter Options</Text>
+                <Text style={styles.modalSubtitle}>
+                  State Portal ({territoryScopeText}) • Filter Reports
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setIsFilterModalVisible(false)}
+              >
+                <Icon name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Field 0: State (Fixed) */}
+            <View style={styles.modalFormField}>
+              <View style={styles.fieldLabelRow}>
+                <Icon name="flag-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.fieldLabel}>State Jurisdiction</Text>
+                <View style={styles.fixedBadge}>
+                  <Icon name="lock-outline" size={11} color="#64748B" />
+                  <Text style={styles.fixedBadgeText}>Fixed</Text>
+                </View>
+              </View>
+              <View style={[styles.dropdownSelectorBox, styles.selectorBoxDisabled]}>
+                <Text style={[styles.dropdownSelectorText, styles.dropdownSelectorTextDisabled]}>
+                  Tamil Nadu (State-wide)
+                </Text>
+                <Icon name="lock-outline" size={18} color="#94A3B8" />
+              </View>
+            </View>
+
+            {/* Field 1: District Dropdown Selector */}
+            <View style={styles.modalFormField}>
+              <View style={styles.fieldLabelRow}>
+                <Icon name="bank" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.fieldLabel}>Select District (State Level)</Text>
+                {isDistrictFixed && (
+                  <View style={styles.fixedBadge}>
+                    <Icon name="lock-outline" size={11} color="#64748B" />
+                    <Text style={styles.fixedBadgeText}>Fixed</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                style={[styles.dropdownSelectorBox, isDistrictFixed && styles.selectorBoxDisabled]}
+                activeOpacity={isDistrictFixed ? 1 : 0.8}
+                onPress={() => !isDistrictFixed && setShowDistrictPicker(true)}
+              >
+                <Text
+                  style={[
+                    styles.dropdownSelectorText,
+                    isDistrictFixed && styles.dropdownSelectorTextDisabled,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {formatDistrictName(selectedDistrict)}
+                </Text>
+                <Icon
+                  name={isDistrictFixed ? 'lock-outline' : 'chevron-down'}
+                  size={isDistrictFixed ? 18 : 20}
+                  color={isDistrictFixed ? '#94A3B8' : theme.colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Field 2: Division Dropdown Selector */}
+            <View style={styles.modalFormField}>
+              <View style={styles.fieldLabelRow}>
+                <Icon name="layers-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.fieldLabel}>Select Division (Within District)</Text>
+                {isDivisionFixed && (
+                  <View style={styles.fixedBadge}>
+                    <Icon name="lock-outline" size={11} color="#64748B" />
+                    <Text style={styles.fixedBadgeText}>Fixed</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                style={[styles.dropdownSelectorBox, isDivisionFixed && styles.selectorBoxDisabled]}
+                activeOpacity={isDivisionFixed ? 1 : 0.8}
+                onPress={() => !isDivisionFixed && setShowDivisionPicker(true)}
+              >
+                <Text
+                  style={[
+                    styles.dropdownSelectorText,
+                    isDivisionFixed && styles.dropdownSelectorTextDisabled,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {formatDivisionName(selectedDivision)}
+                </Text>
+                <Icon
+                  name={isDivisionFixed ? 'lock-outline' : 'chevron-down'}
+                  size={isDivisionFixed ? 18 : 20}
+                  color={isDivisionFixed ? '#94A3B8' : theme.colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Field 3: Pincode */}
+            <View style={styles.modalFormField}>
+              <View style={styles.fieldLabelRow}>
+                <Icon name="map-marker-outline" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.fieldLabel}>Enter Pincode (Type to Search Locality)</Text>
+                {isPincodeFixed && (
+                  <View style={styles.fixedBadge}>
+                    <Icon name="lock-outline" size={11} color="#64748B" />
+                    <Text style={styles.fixedBadgeText}>Fixed</Text>
+                  </View>
+                )}
+              </View>
+              <View style={[styles.pincodeInputBox, isPincodeFixed && styles.selectorBoxDisabled]}>
+                <Icon
+                  name="email-outline"
+                  size={20}
+                  color={isPincodeFixed ? '#94A3B8' : theme.colors.primary}
+                  style={{ marginRight: 10 }}
+                />
+                <TextInput
+                  style={[styles.pincodeInput, isPincodeFixed && styles.dropdownSelectorTextDisabled]}
+                  placeholder={isPincodeFixed ? userDefaultPincode : 'Type 6-digit Pincode (e.g. 600001)'}
+                  placeholderTextColor="#94A3B8"
+                  value={pincodeFilterInput}
+                  onChangeText={setPincodeFilterInput}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  editable={!isPincodeFixed}
+                />
+                {isPincodeFixed && <Icon name="lock-outline" size={18} color="#94A3B8" />}
+              </View>
+              <Text style={styles.fieldHint}>
+                {isPincodeFixed
+                  ? 'Your assigned pincode territory is locked.'
+                  : 'Type full or partial pincode to search reports in that area.'}
+              </Text>
+            </View>
+
+            {/* Modal Actions */}
+            <View style={styles.modalActionButtonsRow}>
+              <TouchableOpacity style={styles.modalResetBtn} onPress={handleResetFilters}>
+                <Text style={styles.modalResetBtnText}>Reset All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalApplyBtn} onPress={handleApplyFilters}>
+                <Text style={styles.modalApplyBtnText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
+      </Modal>
 
-        {/* FILTER CHIPS ROLL */}
-        <View style={styles.chipsContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipsScrollContent}
-          >
-            {/* Scope Tabs */}
-            <TouchableOpacity
-              style={[styles.chip, activeScopeTab === 'ALL' ? styles.chipSelected : styles.chipUnselected]}
-              onPress={() => setActiveScopeTab('ALL')}
-            >
-              <Text style={[styles.chipText, activeScopeTab === 'ALL' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                All Reports
-              </Text>
-            </TouchableOpacity>
+      {/* District Picker Dropdown Modal */}
+      <FICDropdownModal
+        visible={showDistrictPicker}
+        title="Select District"
+        options={districtDropdownOptions}
+        selectedValue={selectedDistrict}
+        onSelect={val => {
+          setSelectedDistrict(val);
+          setSelectedDivision('ALL');
+        }}
+        onClose={() => setShowDistrictPicker(false)}
+      />
 
-            <TouchableOpacity
-              style={[styles.chip, activeScopeTab === 'MY' ? styles.chipSelected : styles.chipUnselected]}
-              onPress={() => setActiveScopeTab('MY')}
-            >
-              <Text style={[styles.chipText, activeScopeTab === 'MY' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                My Reports
-              </Text>
-            </TouchableOpacity>
+      {/* Division Picker Dropdown Modal */}
+      <FICDropdownModal
+        visible={showDivisionPicker}
+        title="Select Division"
+        options={divisionDropdownOptions}
+        selectedValue={selectedDivision}
+        onSelect={val => setSelectedDivision(val)}
+        onClose={() => setShowDivisionPicker(false)}
+      />
 
-            <TouchableOpacity
-              style={[styles.chip, activeScopeTab === 'DIVISION' ? styles.chipSelected : styles.chipUnselected]}
-              onPress={() => setActiveScopeTab('DIVISION')}
-            >
-              <Text style={[styles.chipText, activeScopeTab === 'DIVISION' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                Division Managers
-              </Text>
-            </TouchableOpacity>
-
-            {/* Category Dropdown */}
-            <TouchableOpacity
-              style={[styles.chip, styles.chipUnselected]}
-              onPress={() => setShowCategoryFilterModal(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.chipTextUnselected}>
-                {selectedCategoryFilter === 'ALL' ? 'All Categories' : selectedCategoryFilter}
-              </Text>
-              <Icon name="chevron-down" size={14} color="#64748B" style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
-
-            {/* Status Dropdown */}
-            <TouchableOpacity
-              style={[styles.chip, styles.chipUnselected]}
-              onPress={() => setShowStatusFilterModal(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.chipTextUnselected}>
-                {selectedInterestFilter === 'ALL'
-                  ? 'All Statuses'
-                  : selectedInterestFilter === 'INTERESTED'
-                  ? 'Interested'
-                  : 'Not Interested'}
-              </Text>
-              <Icon name="chevron-down" size={14} color="#64748B" style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
-        {/* VISIT CARDS FLATLIST */}
-        <FlatList
-          data={filteredRecords}
-          keyExtractor={item => item.id}
-          renderItem={renderVisitCard}
-          scrollEnabled={false}
-          ListEmptyComponent={
-            <View style={styles.emptyBox}>
-              <Icon name="store-search-outline" size={48} color="#94A3B8" />
-              <Text style={styles.emptyTitle}>No Visit Records Found</Text>
-              <Text style={styles.emptySub}>No shop visit audit logs match your selected filter criteria.</Text>
-            </View>
-          }
-        />
-      </ScrollView>
-
-      {/* MODAL 1: + FIELD SHOP VISIT */}
+      {/* Field Visit Modal (Full 3-Step Workflow) */}
       <Modal
         visible={isFieldVisitModalOpen}
         animationType="slide"
@@ -714,7 +1171,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
             <View style={styles.modalHeaderRow}>
               <View style={styles.modalHeaderTitleGroup}>
                 <View style={styles.modalIconBadge}>
-                  <Icon name="storefront-outline" size={22} color="#1D4ED8" />
+                  <Icon name="storefront-outline" size={22} color={theme.colors.primary} />
                 </View>
                 <View>
                   <Text style={styles.modalTitle}>Field Shop Visit</Text>
@@ -732,12 +1189,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              style={styles.modalScrollBody}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
+            <ScrollView style={styles.modalScrollBody} showsVerticalScrollIndicator={false}>
               {/* STEP 1: Shop Details & Category */}
               <View style={styles.stepBox}>
                 <View style={styles.stepHeaderRow}>
@@ -748,11 +1200,11 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 </View>
 
                 <View style={styles.stepInputsRow}>
-                  <View style={[styles.inputGroupCol, { flex: 1.25 }]}>
-                    <Text style={styles.fieldLabel}>Shop Name / Title</Text>
+                  <View style={[styles.inputGroupCol, { flex: 1.2 }]}>
+                    <Text style={styles.fieldLabelStep}>Shop Name / Business Title</Text>
                     <TextInput
                       style={styles.textInputStyle}
-                      placeholder="e.g. Sri Lakshmi Store"
+                      placeholder="e.g. Sri Lakshmi Supermarket"
                       placeholderTextColor="#94A3B8"
                       value={formShopName}
                       onChangeText={setFormShopName}
@@ -760,16 +1212,14 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   </View>
 
                   <View style={[styles.inputGroupCol, { flex: 1 }]}>
-                    <Text style={styles.fieldLabel}>Category</Text>
+                    <Text style={styles.fieldLabelStep}>Business Category</Text>
                     <TouchableOpacity
                       style={styles.selectCategoryBtn}
                       onPress={() => setShowFormCategoryModal(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.selectCategoryText} numberOfLines={1}>
-                        {formCategory}
-                      </Text>
-                      <Icon name="chevron-down" size={16} color="#64748B" />
+                      <Text style={styles.selectCategoryText}>{formCategory}</Text>
+                      <Icon name="chevron-down" size={18} color="#64748B" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -796,7 +1246,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                           </Text>
                         </View>
                         <Text style={styles.storefrontAttachedSubtitle} numberOfLines={1}>
-                          {formPhotoName || 'Real Storefront Photo'} • Manual Upload Verified
+                          {formPhotoName || 'Real Storefront Photo'} • Verified
                         </Text>
                       </View>
                       <View style={styles.storefrontBtnGroup}>
@@ -805,7 +1255,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                           onPress={() => setShowStorefrontUploadModal(true)}
                           activeOpacity={0.8}
                         >
-                          <Icon name="folder-image" size={14} color="#1D4ED8" style={{ marginRight: 4 }} />
+                          <Icon name="folder-image" size={14} color={theme.colors.primary} style={{ marginRight: 4 }} />
                           <Text style={styles.storefrontChangeBtnText}>Change</Text>
                         </TouchableOpacity>
 
@@ -831,7 +1281,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                       activeOpacity={0.8}
                     >
                       <View style={styles.storefrontUploadIconWrap}>
-                        <Icon name="cloud-upload" size={26} color="#2563EB" />
+                        <Icon name="cloud-upload" size={26} color={theme.colors.primary} />
                       </View>
                       <Text style={styles.storefrontUploadMainText}>Click to upload storefront photo</Text>
                       <Text style={styles.storefrontUploadSubText}>
@@ -845,8 +1295,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                         onPress={() => handleCapturePhoto('camera')}
                         activeOpacity={0.8}
                       >
-                        <Icon name="camera" size={15} color="#1D4ED8" style={{ marginRight: 4 }} />
-                        <Text style={styles.quickActionBtnText} numberOfLines={1}>Real Camera</Text>
+                        <Icon name="camera" size={16} color={theme.colors.primary} style={{ marginRight: 6 }} />
+                        <Text style={styles.quickActionBtnText}>Camera</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -854,8 +1304,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                         onPress={() => handleCapturePhoto('gallery')}
                         activeOpacity={0.8}
                       >
-                        <Icon name="image-multiple" size={15} color="#16A34A" style={{ marginRight: 4 }} />
-                        <Text style={[styles.quickActionBtnText, { color: '#15803D' }]} numberOfLines={1}>Device Gallery</Text>
+                        <Icon name="image-multiple" size={16} color="#16A34A" style={{ marginRight: 6 }} />
+                        <Text style={[styles.quickActionBtnText, { color: '#15803D' }]}>Gallery</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -882,31 +1332,18 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   >
                     <Icon
                       name="thumb-up-outline"
-                      size={18}
+                      size={20}
                       color={formInterestStatus === 'YES' ? '#059669' : '#475569'}
-                      style={styles.interestBtnIcon}
+                      style={{ marginRight: 6 }}
                     />
-                    <View style={styles.interestBtnTextGroup}>
-                      <Text
-                        style={[
-                          styles.interestBtnMainText,
-                          formInterestStatus === 'YES' && styles.interestBtnTextYes,
-                        ]}
-                      >
-                        YES
-                      </Text>
-                      <Text
-                        style={[
-                          styles.interestBtnSubText,
-                          formInterestStatus === 'YES' && styles.interestBtnTextYes,
-                        ]}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.75}
-                      >
-                        Interested
-                      </Text>
-                    </View>
+                    <Text
+                      style={[
+                        styles.interestBtnText,
+                        formInterestStatus === 'YES' && styles.interestBtnTextYes,
+                      ]}
+                    >
+                      YES (Interested)
+                    </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -919,31 +1356,18 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   >
                     <Icon
                       name="thumb-down-outline"
-                      size={18}
+                      size={20}
                       color={formInterestStatus === 'NO' ? '#DC2626' : '#475569'}
-                      style={styles.interestBtnIcon}
+                      style={{ marginRight: 6 }}
                     />
-                    <View style={styles.interestBtnTextGroup}>
-                      <Text
-                        style={[
-                          styles.interestBtnMainText,
-                          formInterestStatus === 'NO' && styles.interestBtnTextNo,
-                        ]}
-                      >
-                        NO
-                      </Text>
-                      <Text
-                        style={[
-                          styles.interestBtnSubText,
-                          formInterestStatus === 'NO' && styles.interestBtnTextNo,
-                        ]}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.75}
-                      >
-                        Not Interested
-                      </Text>
-                    </View>
+                    <Text
+                      style={[
+                        styles.interestBtnText,
+                        formInterestStatus === 'NO' && styles.interestBtnTextNo,
+                      ]}
+                    >
+                      NO (Not Interested)
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -991,7 +1415,7 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                       recordedAudioUri={recordedAudioUri}
                       audioDurationSeconds={voiceDuration}
                       onStartRecording={() => setIsRecordingVoice(true)}
-                      onStopRecording={(uri: string, durationSecs: number) => {
+                      onStopRecording={(uri, durationSecs) => {
                         setRecordedAudioUri(uri);
                         setVoiceDuration(durationSecs);
                         setIsRecordingVoice(false);
@@ -1018,248 +1442,25 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
         </View>
       </Modal>
 
-      {/* MODAL 2: GENERATE REPORT */}
-      <Modal
-        visible={isGenerateReportModalOpen}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setIsGenerateReportModalOpen(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.generateReportModalContent}>
-            <View style={styles.modalHeaderRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Icon name="file-chart-outline" size={24} color="#1D4ED8" style={{ marginRight: 8 }} />
-                <Text style={styles.modalTitle}>Generate Report</Text>
-              </View>
-              <TouchableOpacity onPress={() => setIsGenerateReportModalOpen(false)}>
-                <Icon name="close" size={20} color="#64748B" />
-              </TouchableOpacity>
-            </View>
+      {/* Storefront Image Upload Modal */}
+      <FICImageUploadModal
+        visible={showStorefrontUploadModal}
+        title="Upload Storefront Photo"
+        subtitle="Upload shop front board photo with GPS verification."
+        onImageSelected={(uri) => {
+          setFormPhotoUri(uri);
+          setFormPhotoName('Storefront_Photo.jpg');
+          setFormPhotoCaptured(true);
+          setShowStorefrontUploadModal(false);
+        }}
+        onClose={() => setShowStorefrontUploadModal(false)}
+      />
 
-            <Text style={styles.generateReportSub}>
-              Compile field visit audit logs, storefront verification photos, and merchant interest breakdown.
-            </Text>
-
-            <Text style={styles.fieldLabel}>Select Date Period</Text>
-            <View style={styles.rangeBtnRow}>
-              {['TODAY', 'THIS_WEEK', 'THIS_MONTH', 'CUSTOM'].map(range => (
-                <TouchableOpacity
-                  key={range}
-                  style={[styles.rangeBtn, reportDateRange === range && styles.rangeBtnActive]}
-                  onPress={() => setReportDateRange(range)}
-                >
-                  <Text style={[styles.rangeBtnText, reportDateRange === range && styles.rangeBtnTextActive]}>
-                    {range === 'CUSTOM' ? '📅 Custom Dates' : range.replaceAll('_', ' ')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* CUSTOM DATE RANGE INPUT PICKER */}
-            {reportDateRange === 'CUSTOM' && (
-              <View style={styles.customDateBox}>
-                <Text style={styles.customDateTitle}>📅 Specify Custom Date Range</Text>
-                <View style={{ flexDirection: 'row' }}>
-                  <View style={{ flex: 1, marginRight: 6 }}>
-                    <Text style={styles.fieldLabelSmall}>Start Date (YYYY-MM-DD)</Text>
-                    <TextInput
-                      style={styles.customDateInput}
-                      value={startDateStr}
-                      onChangeText={setStartDateStr}
-                      placeholder="2026-09-01"
-                      placeholderTextColor="#94A3B8"
-                    />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: 6 }}>
-                    <Text style={styles.fieldLabelSmall}>End Date (YYYY-MM-DD)</Text>
-                    <TextInput
-                      style={styles.customDateInput}
-                      value={endDateStr}
-                      onChangeText={setEndDateStr}
-                      placeholder="2026-09-26"
-                      placeholderTextColor="#94A3B8"
-                    />
-                  </View>
-                </View>
-              </View>
-            )}
-
-            <Text style={[styles.fieldLabel, { marginTop: 14 }]}>Report Format</Text>
-            <View style={styles.rangeBtnRow}>
-              {['PDF', 'CSV', 'EXCEL'].map(fmt => (
-                <TouchableOpacity
-                  key={fmt}
-                  style={[styles.rangeBtn, reportFormat === fmt && styles.rangeBtnActive]}
-                  onPress={() => setReportFormat(fmt)}
-                >
-                  <Text style={[styles.rangeBtnText, reportFormat === fmt && styles.rangeBtnTextActive]}>
-                    {fmt} Document
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.generateSubmitBtn,
-                isExporting && { opacity: 0.6, backgroundColor: '#64748B' },
-              ]}
-              activeOpacity={0.85}
-              disabled={isExporting}
-              onPress={handleGenerateReportSubmit}
-            >
-              {isExporting ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={styles.generateSubmitBtnText}>
-                    {exportProgressStage || 'Generating report...'}
-                  </Text>
-                </View>
-              ) : (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Icon name="download" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.generateSubmitBtnText}>Generate & Download Report</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* MODAL 3: REAL EXPORT SUCCESS - DOWNLOADED TO ANDROID DEVICE */}
-      {exportResultModal && (
-        <Modal
-          visible={!!exportResultModal}
-          animationType="fade"
-          transparent={true}
-          onRequestClose={() => setExportResultModal(null)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.generateReportModalContent, { maxHeight: '85%' }]}>
-              <View style={{ alignItems: 'center', marginBottom: 12 }}>
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    backgroundColor: '#DCFCE7',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 8,
-                  }}
-                >
-                  <Icon name="check-circle" size={32} color="#16A34A" />
-                </View>
-                <Text style={styles.modalTitle}>Report downloaded successfully</Text>
-                <Text style={styles.generateReportSub}>
-                  {exportResultModal.recordCount} field visit records verified & saved to device Downloads.
-                </Text>
-              </View>
-
-              {/* File Info Box */}
-              <View
-                style={{
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: 12,
-                  padding: 14,
-                  marginBottom: 16,
-                  borderWidth: 1,
-                  borderColor: '#E2E8F0',
-                }}
-              >
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#64748B', marginBottom: 4 }}>
-                  File:
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-                  <Icon
-                    name={
-                      reportFormat === 'PDF'
-                        ? 'file-pdf-box'
-                        : reportFormat === 'EXCEL'
-                        ? 'file-excel-box'
-                        : 'file-delimited'
-                    }
-                    size={22}
-                    color={reportFormat === 'PDF' ? '#DC2626' : reportFormat === 'EXCEL' ? '#16A34A' : '#2563EB'}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text
-                    style={{ fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1 }}
-                    numberOfLines={1}
-                  >
-                    {exportResultModal.fileName}
-                  </Text>
-                </View>
-
-                {exportResultModal.displayPath || exportResultModal.filePath ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                    <Icon name="folder-check-outline" size={14} color="#059669" style={{ marginRight: 4 }} />
-                    <Text style={{ fontSize: 11, color: '#059669', flex: 1 }} numberOfLines={1}>
-                      Saved: {exportResultModal.displayPath || exportResultModal.filePath}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              {/* Action Buttons: [ Open ] and [ Share ] */}
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                <TouchableOpacity
-                  style={[
-                    styles.generateSubmitBtn,
-                    { flex: 1, backgroundColor: '#1D4ED8', marginTop: 0, height: 46 },
-                  ]}
-                  onPress={async () => {
-                    const openResult = await reportExportService.openFile(exportResultModal);
-                    if (!openResult.success) {
-                      Alert.alert(
-                        'Unable to Open File',
-                        openResult.message || 'No compatible app found to open this file.'
-                      );
-                    }
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Icon name="open-in-new" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.generateSubmitBtnText}>Open</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.generateSubmitBtn,
-                    { flex: 1, backgroundColor: '#059669', marginTop: 0, height: 46 },
-                  ]}
-                  onPress={async () => {
-                    try {
-                      await reportExportService.shareFile(exportResultModal);
-                    } catch (err: any) {
-                      Alert.alert('Share Error', err.message || 'Unable to share report file.');
-                    }
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Icon name="share-variant" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                  <Text style={styles.generateSubmitBtnText}>Share</Text>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={{ paddingVertical: 8, alignItems: 'center' }}
-                onPress={() => setExportResultModal(null)}
-              >
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B' }}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {/* Category Filter Dropdown Modal */}
+      {/* Form Category Picker Modal */}
       <FICDropdownModal
-        visible={showCategoryFilterModal}
-        title="Select Category Filter"
+        visible={showFormCategoryModal}
+        title="Select Business Category"
         options={[
-          { label: 'All Categories', value: 'ALL' },
           { label: 'Service', value: 'Service' },
           { label: 'Product', value: 'Product' },
           { label: 'Food', value: 'Food' },
@@ -1268,69 +1469,60 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
           { label: 'Stay', value: 'Stay' },
           { label: 'Jobs', value: 'Jobs' },
         ]}
-        selectedValue={selectedCategoryFilter}
-        onSelect={(val: string) => setSelectedCategoryFilter(val)}
-        onClose={() => setShowCategoryFilterModal(false)}
-      />
-
-      {/* Status Filter Dropdown Modal */}
-      <FICDropdownModal
-        visible={showStatusFilterModal}
-        title="Select Interest Status Filter"
-        options={[
-          { label: 'All Statuses', value: 'ALL' },
-          { label: 'Interested', value: 'INTERESTED' },
-          { label: 'Not Interested', value: 'NOT_INTERESTED' },
-        ]}
-        selectedValue={selectedInterestFilter}
-        onSelect={(val: string) => setSelectedInterestFilter(val)}
-        onClose={() => setShowStatusFilterModal(false)}
-      />
-
-      {/* Form Category Dropdown Modal */}
-      <FICDropdownModal
-        visible={showFormCategoryModal}
-        title="Select Business Category"
-        options={['Service', 'Product', 'Food', 'Daily Needs', 'Travel', 'Stay', 'Jobs']}
         selectedValue={formCategory}
-        onSelect={(val: string) => setFormCategory(val)}
+        onSelect={val => setFormCategory(val)}
         onClose={() => setShowFormCategoryModal(false)}
       />
 
-      {/* Form Not Interested Reason Dropdown Modal */}
+      {/* Form Refusal Reason Picker Modal */}
       <FICDropdownModal
         visible={showFormReasonModal}
-        title="Select Reason Not Interested"
+        title="Select Reason for Refusal"
         options={[
-          'Not interested in digital onboarding',
-          'High commission rates',
-          'Owner unavailable',
-          'Competitor exclusive',
-          'Other business reasons',
+          { label: 'Not interested in digital onboarding', value: 'Not interested in digital onboarding' },
+          { label: 'Already registered with competitor platform', value: 'Already registered with competitor platform' },
+          { label: 'Owner / Decision maker not available', value: 'Owner / Decision maker not available' },
+          { label: 'High commission rate concerns', value: 'High commission rate concerns' },
+          { label: 'Cash-only business policy', value: 'Cash-only business policy' },
+          { label: 'Shop closing / relocation planned', value: 'Shop closing / relocation planned' },
         ]}
         selectedValue={formNotInterestedReason}
-        onSelect={(val: string) => setFormNotInterestedReason(val)}
+        onSelect={val => setFormNotInterestedReason(val)}
         onClose={() => setShowFormReasonModal(false)}
       />
-      {/* Storefront Photo Manual Upload Modal */}
-      <FICImageUploadModal
-        visible={showStorefrontUploadModal}
-        title="Upload Shop Storefront Photo"
-        subtitle="Capture real-time photo with camera or choose image from your device gallery."
-        currentImageUri={formPhotoUri}
-        onImageSelected={(uri: string, fileName?: string) => {
-          setFormPhotoUri(uri);
-          setFormPhotoName(fileName || 'Storefront_Photo.jpg');
-          setFormPhotoCaptured(true);
-          setShowStorefrontUploadModal(false);
-        }}
-        onRemoveImage={() => {
-          setFormPhotoUri(null);
-          setFormPhotoName(null);
-          setFormPhotoCaptured(false);
-        }}
-        onClose={() => setShowStorefrontUploadModal(false)}
-      />
+
+      {/* Export Result Modal */}
+      {exportResultModal && (
+        <Modal
+          visible={Boolean(exportResultModal)}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setExportResultModal(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.filterModalCard}>
+              <View style={styles.modalHeaderRow}>
+                <Text style={styles.modalTitle}>Report Exported</Text>
+                <TouchableOpacity
+                  style={styles.modalCloseBtn}
+                  onPress={() => setExportResultModal(null)}
+                >
+                  <Icon name="close" size={20} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 13, color: '#334155', marginBottom: 12 }}>
+                Report "{exportResultModal.fileName}" generated successfully ({exportResultModal.recordCount} records).
+              </Text>
+              <TouchableOpacity
+                style={styles.modalApplyBtn}
+                onPress={() => setExportResultModal(null)}
+              >
+                <Text style={styles.modalApplyBtnText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -1338,257 +1530,212 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: theme.colors.background,
   },
   headerIcon: {
-    fontSize: 22,
-    color: '#FFFFFF',
-    fontWeight: '700',
+    fontSize: 20,
+    color: theme.colors.surface,
   },
-  topHeader: {
-    height: 64,
-    backgroundColor: '#FFFFFF',
+  listContent: {
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+  },
+  headerContentWrapper: {
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.xs,
+  },
+  titleActionRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  hamburgerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
-  headerLogoContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+  headerSubtitle: {
+    ...theme.typography.bodyMedium,
+    color: theme.colors.textSecondary,
   },
-  headerLogo: {
-    width: 40,
-    height: 40,
+  scopeBadgeText: {
+    ...theme.typography.caption,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: theme.spacing.xs,
   },
-  headerRightActions: {
+  newVisitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: theme.radius.sm,
+    gap: 4,
   },
-  bellButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#F8FAFC',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    position: 'relative',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 6,
-    right: 7,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-  },
-  profileCircleButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1.5,
-    borderColor: '#DBEAFE',
-    overflow: 'hidden',
-  },
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-  /* Title & Actions Row */
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  titleTextCol: {
-    flex: 1,
-    marginRight: 12,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 2,
-  },
-  pageSubtitle: {
+  newVisitBtnText: {
     fontSize: 12,
-    color: '#64748B',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  titleActionGroup: {
+
+  // Dark Tier Badges Bar
+  darkTierStatsCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 6,
+    marginVertical: theme.spacing.xs,
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  darkTierPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 3,
+    borderRadius: 6,
+    backgroundColor: '#334155',
+    gap: 3,
+  },
+  darkTierPillSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  darkTierPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
+
+  // Scope Switcher Tabs
+  scopeSwitcherRow: {
+    flexDirection: 'row',
+    marginVertical: theme.spacing.xs,
+    gap: 6,
+  },
+  scopeBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scopeBtnActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  scopeBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+  },
+  scopeBtnTextActive: {
+    color: theme.colors.surface,
+  },
+
+  // Search & Filter
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
     gap: 8,
   },
-  primaryActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1D4ED8',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
-    shadowColor: '#1D4ED8',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  primaryActionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  secondaryActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 10,
-    paddingVertical: 9,
-    borderRadius: 10,
-  },
-  secondaryActionButtonText: {
-    color: '#1D4ED8',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  /* KPI Stat Cards */
-  statsGridRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  statCardLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#475569',
-    marginBottom: 4,
-  },
-  statCardNumber: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  /* Search Row */
-  searchFilterRow: {
-    marginBottom: 12,
-  },
   searchInputContainer: {
-    height: 44,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 10,
+    height: 44,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#0F172A',
+    color: theme.colors.text,
     paddingVertical: 0,
   },
-  /* Chips */
-  chipsContainer: {
-    marginBottom: 14,
+  clearBtn: {
+    padding: 4,
   },
-  chipsScrollContent: {
+  filterModalTriggerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  chipSelected: {
-    backgroundColor: '#1D4ED8',
-  },
-  chipUnselected: {
-    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 12,
+    height: 44,
   },
-  chipText: {
+  filterModalTriggerBtnActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: theme.colors.primary,
+  },
+  filterModalTriggerText: {
     fontSize: 12,
-  },
-  chipTextSelected: {
-    color: '#FFFFFF',
     fontWeight: '700',
+    color: theme.colors.primary,
   },
-  chipTextUnselected: {
-    color: '#475569',
-    fontWeight: '500',
+  filterModalTriggerTextActive: {
+    color: theme.colors.primary,
   },
-  /* Visit Card */
-  cardContainer: {
-    backgroundColor: '#FFFFFF',
+
+  // Quick Tier Filter Pills
+  quickTierPillsScroll: {
+    flexDirection: 'row',
+    paddingVertical: theme.spacing.xs,
+    gap: 6,
+  },
+  tierQuickPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: theme.colors.border,
+  },
+  tierQuickPillActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  tierQuickPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+  },
+  tierQuickPillTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Report Card
+  reportCard: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.sm,
+    padding: theme.spacing.sm,
   },
   cardHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   cardShopImage: {
     width: 60,
     height: 60,
-    borderRadius: 12,
-    marginRight: 12,
-    backgroundColor: '#F1F5F9',
+    borderRadius: theme.radius.sm,
+    backgroundColor: '#E2E8F0',
   },
   cardMainCol: {
     flex: 1,
+    marginLeft: theme.spacing.sm,
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -1597,132 +1744,116 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   cardShopTitle: {
+    ...theme.typography.title,
     fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: '700',
+    color: theme.colors.text,
     flex: 1,
     marginRight: 6,
   },
-  categoryBadge: {
-    paddingHorizontal: 8,
+  interestBadge: {
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 4,
   },
-  categoryBadgeText: {
+  interestYes: {
+    backgroundColor: '#DCFCE7',
+  },
+  interestNo: {
+    backgroundColor: '#FEE2E2',
+  },
+  interestBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  interestYesText: {
+    color: '#15803D',
+  },
+  interestNoText: {
+    color: '#DC2626',
+  },
+  managerRoleText: {
     fontSize: 11,
-    fontWeight: '700',
-  },
-  productsBadgeBg: {
-    backgroundColor: '#EEF2FF',
-  },
-  productsBadgeText: {
-    color: '#4F46E5',
-  },
-  foodBadgeBg: {
-    backgroundColor: '#FEF3C7',
-  },
-  foodBadgeText: {
-    color: '#D97706',
-  },
-  vendorCodeText: {
-    fontSize: 12,
     fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 4,
+    color: theme.colors.primary,
+    marginTop: 1,
   },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cardLocationText: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
     marginTop: 2,
   },
-  cardMetaText: {
-    fontSize: 12,
-    color: '#475569',
+  reasonText: {
+    fontSize: 10,
+    color: '#DC2626',
+    marginTop: 2,
+    fontStyle: 'italic',
   },
-  cardFooterRow: {
+  cardActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    gap: 8,
+    marginTop: theme.spacing.xs,
   },
-  visitIdText: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontFamily: 'monospace',
-  },
-  reportDetailsBtn: {
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  reportDetailsBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  emptyBox: {
+  pdfReportBtn: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.sm,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    gap: 4,
   },
-  emptyTitle: {
-    fontSize: 16,
+  pdfReportBtnText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: '#475569',
-    marginTop: 8,
+    color: '#DC2626',
   },
-  emptySub: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 4,
-    textAlign: 'center',
+  navigateBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.primary,
+    gap: 4,
   },
-  /* MODAL */
+  navigateBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 16,
+    padding: 16,
   },
-  fieldVisitModalContent: {
+  filterModalCard: {
     width: '100%',
-    maxHeight: '94%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    flexDirection: 'column',
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    marginBottom: 12,
-  },
-  modalHeaderTitleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  modalIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 18,
@@ -1730,26 +1861,164 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
   modalSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    marginTop: 2,
   },
   modalCloseBtn: {
-    padding: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalFormField: {
+    marginBottom: 14,
+  },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  fixedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 6,
+    gap: 3,
+  },
+  fixedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  dropdownSelectorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 48,
+  },
+  selectorBoxDisabled: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  dropdownSelectorText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
+    flex: 1,
+  },
+  dropdownSelectorTextDisabled: {
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  pincodeInputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 48,
+  },
+  pincodeInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F172A',
+  },
+  fieldHint: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  modalActionButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  modalResetBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalResetBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  modalApplyBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalApplyBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  // Field Visit Full Modal Styles
+  fieldVisitModalContent: {
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeaderTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingRight: 10,
+  },
+  modalIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   modalScrollBody: {
-    flexShrink: 1,
-  },
-  modalScrollContent: {
-    paddingBottom: 20,
+    maxHeight: 520,
+    marginTop: 6,
   },
   stepBox: {
+    marginBottom: 16,
     backgroundColor: '#F8FAFC',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
   },
   stepHeaderRow: {
     flexDirection: 'row',
@@ -1760,39 +2029,40 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#1D4ED8',
+    backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
   },
   stepBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+    color: '#FFFFFF',
   },
   stepTitle: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: '#0F172A',
   },
   stepInputsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   inputGroupCol: {
-    gap: 4,
+    flex: 1,
   },
-  fieldLabel: {
+  fieldLabelStep: {
     fontSize: 11,
     fontWeight: '700',
     color: '#475569',
+    marginBottom: 4,
   },
   textInputStyle: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',
     borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     height: 40,
     fontSize: 13,
     color: '#0F172A',
@@ -1805,7 +2075,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CBD5E1',
     borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     height: 40,
   },
   selectCategoryText: {
@@ -1860,7 +2130,7 @@ const styles = StyleSheet.create({
   storefrontChangeBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1D4ED8',
+    color: theme.colors.primary,
   },
   storefrontRemoveBtn: {
     backgroundColor: '#FEE2E2',
@@ -1895,7 +2165,7 @@ const styles = StyleSheet.create({
   storefrontUploadMainText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#1D4ED8',
+    color: theme.colors.primary,
   },
   storefrontUploadSubText: {
     fontSize: 11,
@@ -1925,11 +2195,11 @@ const styles = StyleSheet.create({
   quickActionBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1D4ED8',
+    color: theme.colors.primary,
   },
   interestDecisionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   interestBtn: {
     flex: 1,
@@ -1940,29 +2210,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    minHeight: 48,
-  },
-  interestBtnIcon: {
-    marginRight: 6,
-  },
-  interestBtnTextGroup: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    flexShrink: 1,
-  },
-  interestBtnMainText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#334155',
-    lineHeight: 16,
-  },
-  interestBtnSubText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    color: '#64748B',
-    lineHeight: 13,
+    paddingVertical: 12,
   },
   interestBtnYesActive: {
     backgroundColor: '#ECFDF5',
@@ -1971,6 +2219,11 @@ const styles = StyleSheet.create({
   interestBtnNoActive: {
     backgroundColor: '#FEF2F2',
     borderColor: '#EF4444',
+  },
+  interestBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
   },
   interestBtnTextYes: {
     color: '#047857',
@@ -2038,50 +2291,6 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontWeight: '600',
   },
-  audioRecordBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    alignItems: 'center',
-  },
-  recordVoiceBtn: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#DC2626',
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  recordVoiceBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  audioOrText: {
-    fontSize: 10,
-    color: '#94A3B8',
-    marginVertical: 6,
-  },
-  uploadAudioBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    width: '100%',
-  },
-  uploadAudioBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-  },
   submitNotInterestedBtn: {
     backgroundColor: '#DC2626',
     paddingVertical: 12,
@@ -2090,89 +2299,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   submitNotInterestedBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  generateReportModalContent: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-  },
-  generateReportSub: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 16,
-  },
-  rangeBtnRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
-    marginBottom: 10,
-  },
-  rangeBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  rangeBtnActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-  },
-  rangeBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-  },
-  rangeBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  customDateBox: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  customDateTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#1D4ED8',
-    marginBottom: 8,
-  },
-  fieldLabelSmall: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#475569',
-    marginBottom: 4,
-  },
-  customDateInput: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 13,
-    color: '#0F172A',
-  },
-  generateSubmitBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1D4ED8',
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginTop: 16,
-  },
-  generateSubmitBtnText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',

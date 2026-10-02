@@ -24,12 +24,19 @@ export const FICBottomTabBar: React.FC<FICBottomTabBarProps> = ({
     currentRoute === 'Vendors' ||
     currentRoute === 'VendorDetail' ||
     currentRoute === 'VendorVisit' ||
-    currentRoute === 'AddVendor';
+    currentRoute === 'AddVendor' ||
+    currentRoute === 'FieldManagers' ||
+    currentRoute === 'ManagersDirectory' ||
+    currentRoute === 'ManagerDetail' ||
+    currentRoute === 'Directory' ||
+    currentRoute === 'DirectoryHome' ||
+    currentRoute === 'FieldAgents';
   const isReportsActive =
     currentRoute === 'Reports' ||
     currentRoute === 'DailyReport' ||
     currentRoute === 'SubordinateReports' ||
-    currentRoute === 'ReportDetail';
+    currentRoute === 'ReportDetail' ||
+    currentRoute === 'ExceptionReportForm';
   const isMoreActive =
     currentRoute === 'More' ||
     currentRoute === 'MoreMenu' ||

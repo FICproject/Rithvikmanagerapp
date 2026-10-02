@@ -12,6 +12,7 @@ interface AuthContextType {
   token: string | null;
   authError: string | null;
   login: (username: string, password: string) => Promise<AuthLoginResult>;
+  loginWithManager: (manager: Manager) => Promise<AuthLoginResult>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -107,6 +108,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginWithManager = async (targetManager: Manager): Promise<AuthLoginResult> => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const result = await authService.loginWithManager(targetManager);
+      if (result.success && result.manager && result.token) {
+        setToken(result.token);
+        setManager(result.manager);
+        setIsAuthenticated(true);
+
+        socketService.connect(result.token, {
+          managerId: result.manager.id,
+          role: result.manager.role,
+          stateId: result.manager.stateId,
+          districtId: result.manager.districtId,
+          divisionId: result.manager.divisionId,
+          pincodeId: result.manager.pincodeId,
+        });
+
+        pushNotificationService.registerDeviceToken(result.manager.id, result.manager.role, {
+          state: result.manager.state,
+          district: result.manager.districts?.[0],
+          division: result.manager.division,
+          pincode: result.manager.pincode,
+        }).catch(err => console.warn('FCM token registration failed on manager login:', err));
+      } else if (result.errorMessage) {
+        setAuthError(result.errorMessage);
+      }
+      return result;
+    } catch (err) {
+      const fallbackError = 'An unexpected login error occurred.';
+      setAuthError(fallbackError);
+      return {
+        success: false,
+        errorCode: 'NETWORK_ERROR',
+        errorMessage: fallbackError,
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -137,6 +180,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         authError,
         login,
+        loginWithManager,
         logout,
         clearAuthError,
       }}

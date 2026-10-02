@@ -78,24 +78,24 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   const [voiceAudioSource, setVoiceAudioSource] = useState<'RECORDED' | 'UPLOADED'>('RECORDED');
   const [uploadStatusText, setUploadStatusText] = useState<string | null>(null);
 
-  const [businessName, setBusinessName] = useState(initialBusinessName || 'Saravana Silk Palace');
+  const [businessName, setBusinessName] = useState(initialBusinessName || '');
   const [logoAttached, setLogoAttached] = useState(false);
   const [category, setCategory] = useState(initialCategory || 'Product');
-  const [phone, setPhone] = useState('9843210987');
-  const [email, setEmail] = useState('saravanasuper@example.com');
-  const [website, setWebsite] = useState('https://saravanasilks.in');
-  const [address, setAddress] = useState('104 Car Street, Salem');
-  const [pincode, setPincode] = useState('636701');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
   const [operatingHours, setOperatingHours] = useState('09:00 AM - 09:00 PM');
-  const [businessDescription, setBusinessDescription] = useState('Traditional handloom silk sarees and bridal textiles');
+  const [businessDescription, setBusinessDescription] = useState('');
 
   // --- Step 2: Owner Information ---
-  const [ownerName, setOwnerName] = useState('S. Murugan');
-  const [alternatePhone, setAlternatePhone] = useState('9443322110');
-  const [agentName, setAgentName] = useState('K. Ramesh');
-  const [coPartnerName, setCoPartnerName] = useState('M. Devi');
-  const [accountPassword, setAccountPassword] = useState('Password123');
-  const [confirmPassword, setConfirmPassword] = useState('Password123');
+  const [ownerName, setOwnerName] = useState('');
+  const [alternatePhone, setAlternatePhone] = useState('');
+  const [agentName, setAgentName] = useState('');
+  const [coPartnerName, setCoPartnerName] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // --- Uploads & Modal States ---
   const [logoImageUri, setLogoImageUri] = useState<string | null>(initialPhotoUri || null);
@@ -121,23 +121,23 @@ export const AddVendorScreen: React.FC<AddVendorScreenProps> = ({
   const [showOperatingHoursModal, setShowOperatingHoursModal] = useState<boolean>(false);
 
   // --- Step 3: Documents & Statutory KYC ---
-  const [panNumber, setPanNumber] = useState('ABCDE1234F');
-  const [aadhaarNumber, setAadhaarNumber] = useState('987654321098');
-  const [gstNumber, setGstNumber] = useState('33ABCDE1234F1Z5');
-  const [companyRegNumber, setCompanyRegNumber] = useState('UDYAM-TN-02-0012345');
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [gstNumber, setGstNumber] = useState('');
+  const [companyRegNumber, setCompanyRegNumber] = useState('');
   const [gstStatus, setGstStatus] = useState('Registered');
   const [msmeStatus, setMsmeStatus] = useState('Small');
   const [licenseAttached, setLicenseAttached] = useState(false);
   const [additionalKycAttached, setAdditionalKycAttached] = useState(false);
 
   // --- Step 4: Bank & Settlement ---
-  const [accountHolderName, setAccountHolderName] = useState('S. Murugan');
-  const [bankName, setBankName] = useState('State Bank of India');
-  const [bankBranch, setBankBranch] = useState('Salem Main Branch');
-  const [bankStreet, setBankStreet] = useState('Collectorate Road');
-  const [bankCity, setBankCity] = useState('Salem');
-  const [accountNumber, setAccountNumber] = useState('30987654321');
-  const [ifscCode, setIfscCode] = useState('SBIN0001234');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [bankBranch, setBankBranch] = useState('');
+  const [bankStreet, setBankStreet] = useState('');
+  const [bankCity, setBankCity] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

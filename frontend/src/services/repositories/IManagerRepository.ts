@@ -29,5 +29,6 @@ export interface IManagerRepository {
   getDivisionsInDistrict(districtId: string, requestingManagerId?: string): Promise<TerritoryHierarchyItem[]>;
   getPincodesInDivision(divisionId: string, requestingManagerId?: string): Promise<TerritoryHierarchyItem[]>;
   getManagersInPincode(pincodeId: string, statusFilter?: ManagerStatusFilter): Promise<Manager[]>;
+  getManagerByPhone(phone: string): Promise<Manager | null>;
 }
 
