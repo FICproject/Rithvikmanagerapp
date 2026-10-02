@@ -1,4 +1,4 @@
-import { Easing } from 'react-native-reanimated';
+import { Easing } from 'react-native';
 
 export const OTP_CONFIG = {
   // Geometry

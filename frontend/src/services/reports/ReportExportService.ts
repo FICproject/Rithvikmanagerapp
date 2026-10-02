@@ -124,6 +124,7 @@ export class ReportExportService implements IReportExportService {
         if (!r.timestamp) return false;
         return (
           r.timestamp.includes(monthPrefix) ||
+          r.timestamp.includes('Oct 2026') ||
           r.timestamp.includes('Sep 2026') ||
           r.timestamp.includes('Today') ||
           r.timestamp.includes('Just now')

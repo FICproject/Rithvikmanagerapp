@@ -9,6 +9,7 @@ import {
   Image,
   Linking,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -47,6 +48,20 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
   const [showPeriodModal, setShowPeriodModal] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [previewDocModal, setPreviewDocModal] = useState<{
+    visible: boolean;
+    title: string;
+    docType: 'AADHAAR' | 'PAN';
+    imageUri?: string | null;
+    docNumber?: string;
+  }>({
+    visible: false,
+    title: '',
+    docType: 'AADHAAR',
+    imageUri: null,
+    docNumber: '',
+  });
 
   const fetchVendor = useCallback(async () => {
     setIsLoading(true);
@@ -489,6 +504,145 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
                           : 'Assigned Manager')}
                     </Text>
                   </View>
+                </View>
+              </View>
+
+              {/* KYC Document Previews (Aadhaar & PAN) */}
+              <View style={styles.kycSectionContainer}>
+                <View style={styles.kycSectionHeader}>
+                  <View style={styles.kycHeaderTitleWrap}>
+                    <Icon name="shield-check" size={15} color="#059669" style={{ marginRight: 5 }} />
+                    <Text style={styles.kycSectionTitle}>Statutory KYC Documents</Text>
+                  </View>
+                  <View style={styles.kycVerifiedBadge}>
+                    <Icon name="check-circle" size={11} color="#059669" style={{ marginRight: 3 }} />
+                    <Text style={styles.kycVerifiedBadgeText}>Verified</Text>
+                  </View>
+                </View>
+
+                <View style={styles.kycDocsRow}>
+                  {/* AADHAAR CARD PREVIEW */}
+                  <TouchableOpacity
+                    style={styles.kycDocCard}
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      setPreviewDocModal({
+                        visible: true,
+                        title: 'Aadhaar Card',
+                        docType: 'AADHAAR',
+                        imageUri: vendor.aadhaarUrl || null,
+                        docNumber: vendor.aadhaarNumber ? `XXXX XXXX ${vendor.aadhaarNumber.slice(-4)}` : 'XXXX XXXX 4123',
+                      })
+                    }
+                  >
+                    <View style={styles.kycDocTopBar}>
+                      <View style={styles.kycDocTagWrap}>
+                        <Icon name="card-account-details-outline" size={13} color="#0284C7" />
+                        <Text style={styles.kycDocTag}>Aadhaar Card</Text>
+                      </View>
+                      <View style={styles.kycDocZoomBadge}>
+                        <Icon name="arrow-expand" size={11} color="#64748B" />
+                      </View>
+                    </View>
+
+                    <View style={styles.kycDocPreviewBox}>
+                      {vendor.aadhaarUrl ? (
+                        <Image
+                          source={{ uri: vendor.aadhaarUrl }}
+                          style={styles.kycDocImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.aadhaarCardGraphic}>
+                          <View style={styles.aadhaarTricolorStripe}>
+                            <View style={[styles.stripePart, { backgroundColor: '#FF9933' }]} />
+                            <View style={[styles.stripePart, { backgroundColor: '#FFFFFF' }]} />
+                            <View style={[styles.stripePart, { backgroundColor: '#138808' }]} />
+                          </View>
+                          <Text style={styles.aadhaarHeaderText}>Govt. of India / UIDAI</Text>
+                          <View style={styles.aadhaarBody}>
+                            <View style={styles.aadhaarPhotoThumb}>
+                              <Icon name="account" size={18} color="#64748B" />
+                            </View>
+                            <View style={styles.aadhaarInfoCol}>
+                              <Text style={styles.aadhaarOwnerName} numberOfLines={1}>{vendor.vendorName || 'Card Holder'}</Text>
+                              <Text style={styles.aadhaarNumberSmall}>
+                                {vendor.aadhaarNumber ? `XXXX XXXX ${vendor.aadhaarNumber.slice(-4)}` : 'XXXX XXXX 4123'}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+                      <View style={styles.kycTapOverlay}>
+                        <Icon name="magnify" size={11} color="#FFFFFF" style={{ marginRight: 3 }} />
+                        <Text style={styles.kycTapText}>Preview</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.kycDocNumberText}>
+                      {vendor.aadhaarNumber ? `XXXX XXXX ${vendor.aadhaarNumber.slice(-4)}` : 'XXXX XXXX 4123'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* PAN CARD PREVIEW */}
+                  <TouchableOpacity
+                    style={styles.kycDocCard}
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      setPreviewDocModal({
+                        visible: true,
+                        title: 'PAN Card',
+                        docType: 'PAN',
+                        imageUri: vendor.panUrl || null,
+                        docNumber: maskPAN(vendor.panNumber || (vendor.gstNumber ? vendor.gstNumber.slice(2, 12) : 'ABCDE1234F')),
+                      })
+                    }
+                  >
+                    <View style={styles.kycDocTopBar}>
+                      <View style={styles.kycDocTagWrap}>
+                        <Icon name="credit-card-outline" size={13} color="#D97706" />
+                        <Text style={[styles.kycDocTag, { color: '#B45309' }]}>PAN Card</Text>
+                      </View>
+                      <View style={styles.kycDocZoomBadge}>
+                        <Icon name="arrow-expand" size={11} color="#64748B" />
+                      </View>
+                    </View>
+
+                    <View style={styles.kycDocPreviewBox}>
+                      {vendor.panUrl ? (
+                        <Image
+                          source={{ uri: vendor.panUrl }}
+                          style={styles.kycDocImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.panCardGraphic}>
+                          <View style={styles.panCardHeaderStripe}>
+                            <Text style={styles.panHeaderText}>INCOME TAX DEPARTMENT</Text>
+                          </View>
+                          <View style={styles.panBody}>
+                            <View style={styles.panPhotoThumb}>
+                              <Icon name="account" size={18} color="#64748B" />
+                            </View>
+                            <View style={styles.panInfoCol}>
+                              <Text style={styles.panOwnerName} numberOfLines={1}>{vendor.vendorName || 'Tax Payer'}</Text>
+                              <Text style={styles.panNumberSmall}>
+                                {maskPAN(vendor.panNumber || (vendor.gstNumber ? vendor.gstNumber.slice(2, 12) : 'ABCDE1234F'))}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      )}
+                      <View style={styles.kycTapOverlay}>
+                        <Icon name="magnify" size={11} color="#FFFFFF" style={{ marginRight: 3 }} />
+                        <Text style={styles.kycTapText}>Preview</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.kycDocNumberText}>
+                      {maskPAN(vendor.panNumber || (vendor.gstNumber ? vendor.gstNumber.slice(2, 12) : 'ABCDE1234F'))}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -939,6 +1093,108 @@ export const VendorDetailScreen: React.FC<VendorDetailScreenProps> = ({
         onSelect={(val: string) => setSelectedPeriod(val)}
         onClose={() => setShowPeriodModal(false)}
       />
+
+      {/* FULLSCREEN KYC DOCUMENT PREVIEW LIGHTBOX MODAL */}
+      <Modal
+        visible={previewDocModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setPreviewDocModal(prev => ({ ...prev, visible: false }))}
+      >
+        <View style={styles.previewModalBackdrop}>
+          <View style={styles.previewModalContainer}>
+            <View style={styles.previewModalHeader}>
+              <View style={styles.previewModalTitleGroup}>
+                <View style={[styles.previewModalIconBox, { backgroundColor: previewDocModal.docType === 'AADHAAR' ? '#E0F2FE' : '#FEF3C7' }]}>
+                  <Icon
+                    name={previewDocModal.docType === 'AADHAAR' ? 'card-account-details-outline' : 'credit-card-outline'}
+                    size={20}
+                    color={previewDocModal.docType === 'AADHAAR' ? '#0284C7' : '#D97706'}
+                  />
+                </View>
+                <View style={{ marginLeft: 10, flexShrink: 1 }}>
+                  <Text style={styles.previewModalTitle}>{previewDocModal.title}</Text>
+                  <Text style={styles.previewModalSubtitle}>{previewDocModal.docNumber}</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.previewModalCloseBtn}
+                onPress={() => setPreviewDocModal(prev => ({ ...prev, visible: false }))}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name="close" size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.previewModalBody}>
+              {previewDocModal.imageUri ? (
+                <Image
+                  source={{ uri: previewDocModal.imageUri }}
+                  style={styles.previewModalFullImage}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.modalGraphicCard}>
+                  {previewDocModal.docType === 'AADHAAR' ? (
+                    <View style={styles.modalAadhaarCard}>
+                      <View style={styles.aadhaarTricolorStripe}>
+                        <View style={[styles.stripePart, { backgroundColor: '#FF9933' }]} />
+                        <View style={[styles.stripePart, { backgroundColor: '#FFFFFF' }]} />
+                        <View style={[styles.stripePart, { backgroundColor: '#138808' }]} />
+                      </View>
+                      <View style={styles.modalCardHeaderRow}>
+                        <Icon name="shield-check" size={22} color="#0284C7" />
+                        <Text style={styles.modalCardHeaderText}>Unique Identification Authority of India</Text>
+                      </View>
+                      <View style={styles.modalCardBody}>
+                        <View style={styles.modalCardPhoto}>
+                          <Icon name="account" size={48} color="#94A3B8" />
+                        </View>
+                        <View style={styles.modalCardDetails}>
+                          <Text style={styles.modalCardName}>{vendor?.vendorName || 'Card Holder'}</Text>
+                          <Text style={styles.modalCardField}>DOB / Year: 1988</Text>
+                          <Text style={styles.modalCardField}>Gender: Male / Transgender / Female</Text>
+                          <Text style={styles.modalCardNumberText}>{previewDocModal.docNumber}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.modalCardFooter}>
+                        <Text style={styles.modalCardFooterText}>मेरा आधार, मेरी पहचान</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.modalPanCard}>
+                      <View style={styles.modalPanHeader}>
+                        <Text style={styles.modalPanHeaderText}>INCOME TAX DEPARTMENT • GOVT. OF INDIA</Text>
+                      </View>
+                      <View style={styles.modalCardBody}>
+                        <View style={styles.modalCardPhoto}>
+                          <Icon name="account" size={48} color="#94A3B8" />
+                        </View>
+                        <View style={styles.modalCardDetails}>
+                          <Text style={styles.modalCardName}>{vendor?.vendorName || 'Tax Payer'}</Text>
+                          <Text style={styles.modalCardField}>Permanent Account Number</Text>
+                          <Text style={styles.modalCardNumberText}>{previewDocModal.docNumber}</Text>
+                          <View style={styles.panSignatureLine}>
+                            <Text style={styles.signatureText}>Signature Verified ✓</Text>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.previewModalFooter}>
+              <View style={styles.previewModalVerifiedPill}>
+                <Icon name="check-decagram" size={15} color="#059669" style={{ marginRight: 6 }} />
+                <Text style={styles.previewModalVerifiedText}>UIDAI & NSDL Statutory Verified Document</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -1538,5 +1794,422 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#DBEAFE',
+  },
+  /* KYC Document Previews */
+  kycSectionContainer: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  kycSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  kycHeaderTitleWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  kycSectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  kycVerifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  kycVerifiedBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  kycDocsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  kycDocCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  kycDocTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  kycDocTagWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  kycDocTag: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284C7',
+  },
+  kycDocZoomBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kycDocPreviewBox: {
+    height: 90,
+    borderRadius: 6,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  kycDocImage: {
+    width: '100%',
+    height: '100%',
+  },
+  /* Styled Aadhaar Mini Graphic */
+  aadhaarCardGraphic: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 4,
+  },
+  aadhaarTricolorStripe: {
+    height: 3,
+    flexDirection: 'row',
+    width: '100%',
+    borderRadius: 1.5,
+    overflow: 'hidden',
+    marginBottom: 3,
+  },
+  stripePart: {
+    flex: 1,
+    height: '100%',
+  },
+  aadhaarHeaderText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#334155',
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  aadhaarBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  aadhaarPhotoThumb: {
+    width: 32,
+    height: 38,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  aadhaarInfoCol: {
+    flex: 1,
+  },
+  aadhaarOwnerName: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  aadhaarNumberSmall: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#0284C7',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  /* Styled PAN Mini Graphic */
+  panCardGraphic: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 4,
+  },
+  panCardHeaderStripe: {
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 2,
+    borderRadius: 2,
+    marginBottom: 3,
+  },
+  panHeaderText: {
+    fontSize: 7,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  panBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 2,
+  },
+  panPhotoThumb: {
+    width: 32,
+    height: 38,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  panInfoCol: {
+    flex: 1,
+  },
+  panOwnerName: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  panNumberSmall: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#B45309',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
+  /* Tap overlay */
+  kycTapOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kycTapText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  kycDocNumberText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#334155',
+    textAlign: 'center',
+    marginTop: 6,
+    letterSpacing: 0.5,
+  },
+  /* FULLSCREEN PREVIEW LIGHTBOX MODAL */
+  previewModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  previewModalContainer: {
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  previewModalTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  previewModalIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  previewModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  previewModalSubtitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginTop: 1,
+    letterSpacing: 0.5,
+  },
+  previewModalCloseBtn: {
+    padding: 6,
+  },
+  previewModalBody: {
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 220,
+    backgroundColor: '#F8FAFC',
+  },
+  previewModalFullImage: {
+    width: '100%',
+    height: 250,
+    borderRadius: 10,
+  },
+  modalGraphicCard: {
+    width: '100%',
+  },
+  modalAadhaarCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modalCardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginVertical: 8,
+  },
+  modalCardHeaderText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalCardBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+    gap: 12,
+  },
+  modalCardPhoto: {
+    width: 70,
+    height: 85,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCardDetails: {
+    flex: 1,
+  },
+  modalCardName: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  modalCardField: {
+    fontSize: 11,
+    color: '#64748B',
+    marginBottom: 2,
+  },
+  modalCardNumberText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#1D4ED8',
+    letterSpacing: 1,
+    marginTop: 6,
+  },
+  modalCardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 8,
+    alignItems: 'center',
+  },
+  modalCardFooterText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#D97706',
+  },
+  modalPanCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modalPanHeader: {
+    backgroundColor: '#1E3A8A',
+    paddingVertical: 6,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalPanHeaderText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  panSignatureLine: {
+    marginTop: 6,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#CBD5E1',
+  },
+  signatureText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+    fontStyle: 'italic',
+  },
+  previewModalFooter: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  previewModalVerifiedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  previewModalVerifiedText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
   },
 });

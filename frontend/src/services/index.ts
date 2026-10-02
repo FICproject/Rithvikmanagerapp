@@ -77,7 +77,7 @@ export const services: ServiceContainer = {
   notificationRepository: ENV.useMockData ? new MockNotificationRepository() : new HttpNotificationRepository(),
   storageService: new MockSecureStorageService(),
   audioRecorderService: new MockAudioRecorderService(),
-  mediaUploadService: new HttpMediaUploadService(),
+  mediaUploadService: ENV.useMockData ? new MockMediaUploadService() : new HttpMediaUploadService(),
   offlineQueueService: offlineQueueService,
   fieldVisitService: fieldVisitService,
 };

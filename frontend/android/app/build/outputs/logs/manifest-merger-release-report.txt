@@ -1,26 +1,26 @@
 -- Merging decision tree log ---
 provider#androidx.core.content.FileProvider
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml:29:7-37:18
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:53:7-61:18
 	android:grantUriPermissions
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:33:11-45
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:57:11-45
 	android:authorities
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:31:11-62
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:55:11-62
 	android:exported
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:32:11-35
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:56:11-35
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:30:11-60
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:54:11-60
 manifest
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:1:1-60:12
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml:1:1-60:12
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml:1:1-60:12
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml:1:1-60:12
-MERGED from [:react-native-gesture-handler] T:\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
-MERGED from [:react-native-safe-area-context] T:\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
-MERGED from [:react-native-screens] T:\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
-MERGED from [:react-native-reanimated] T:\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
-MERGED from [:react-native-svg] T:\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
-MERGED from [:react-native-vector-icons] T:\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:1:1-84:12
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:1:1-84:12
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:1:1-84:12
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:1:1-84:12
+MERGED from [:react-native-gesture-handler] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:react-native-safe-area-context] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:react-native-screens] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:react-native-reanimated] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:react-native-svg] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
+MERGED from [:react-native-vector-icons] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:2:1-7:12
 MERGED from [com.facebook.react:react-android:0.75.2] C:\Users\user\.gradle\caches\8.8\transforms\be399dcb2f4b5abe0bfc27fefd11d639\transformed\jetified-react-android-0.75.2-release\AndroidManifest.xml:2:1-12:12
 MERGED from [com.google.android.material:material:1.6.1] C:\Users\user\.gradle\caches\8.8\transforms\1b1fb6b7362be798cf97466abafe8241\transformed\material-1.6.1\AndroidManifest.xml:17:1-26:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\user\.gradle\caches\8.8\transforms\be3a2bfb6a241d2ae5221c084bf9d15f\transformed\jetified-appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
@@ -84,72 +84,96 @@ MERGED from [androidx.print:print:1.0.0] C:\Users\user\.gradle\caches\8.8\transf
 MERGED from [com.facebook.fbjni:fbjni:0.6.0] C:\Users\user\.gradle\caches\8.8\transforms\979d55fc341b5b86c5a4b7383f7555a2\transformed\jetified-fbjni-0.6.0\AndroidManifest.xml:2:1-7:12
 MERGED from [com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:2:1-17:12
 	package
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 	android:versionName
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 	android:versionCode
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 	xmlns:android
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:1:11-69
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:1:11-69
 uses-permission#android.permission.INTERNET
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:3:5-67
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:3:5-67
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:3:22-64
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:3:22-64
 uses-permission#android.permission.RECORD_AUDIO
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:4:5-71
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:4:5-71
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:4:22-68
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:4:22-68
 uses-permission#android.permission.READ_EXTERNAL_STORAGE
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:5:5-80
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:5:5-80
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:5:22-77
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:5:22-77
 uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:6:5-81
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:6:5-81
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:6:22-78
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:6:22-78
 uses-permission#android.permission.READ_MEDIA_IMAGES
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:7:5-76
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:7:5-76
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:7:22-73
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:7:22-73
 uses-permission#android.permission.CAMERA
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:8:5-65
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:8:5-65
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:8:22-62
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:8:22-62
 uses-permission#android.permission.ACCESS_FINE_LOCATION
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:9:5-79
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:9:5-79
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:9:22-76
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:9:22-76
 uses-permission#android.permission.ACCESS_COARSE_LOCATION
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:10:5-81
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:10:5-81
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:10:22-78
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:10:22-78
 uses-permission#android.permission.POST_NOTIFICATIONS
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:11:5-77
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:11:5-77
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:11:22-74
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:11:22-74
 uses-permission#android.permission.VIBRATE
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:12:5-66
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:12:5-66
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:12:22-63
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:12:22-63
 uses-permission#android.permission.RECEIVE_BOOT_COMPLETED
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:13:5-81
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:13:5-81
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:13:22-78
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:13:22-78
 uses-feature#android.hardware.camera
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:15:5-85
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:5-85
 	android:required
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:15:58-82
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:58-82
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:15:19-57
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:19-57
 uses-feature#android.hardware.camera.autofocus
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:16:5-95
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:5-95
 	android:required
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:16:68-92
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:68-92
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:16:19-67
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:19-67
+queries
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:19:5-40:15
+intent#action:name:android.intent.action.VIEW+data:mimeType:*/*
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:20:9-23:18
+action#android.intent.action.VIEW
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:13-65
+	android:name
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:21-62
+data
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+	android:mimeType
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+intent#action:name:android.intent.action.SEND+data:mimeType:*/*
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:24:9-27:18
+action#android.intent.action.SEND
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:25:13-65
+	android:name
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:25:21-62
+intent#action:name:android.intent.action.VIEW+data:mimeType:application/pdf
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:28:9-31:18
+intent#action:name:android.intent.action.VIEW+data:mimeType:text/csv
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:32:9-35:18
+intent#action:name:android.intent.action.VIEW+data:mimeType:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:36:9-39:18
 application
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:18:5-59:19
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml:18:5-59:19
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:42:5-83:19
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:42:5-83:19
 MERGED from [com.google.android.material:material:1.6.1] C:\Users\user\.gradle\caches\8.8\transforms\1b1fb6b7362be798cf97466abafe8241\transformed\material-1.6.1\AndroidManifest.xml:24:5-20
 MERGED from [com.google.android.material:material:1.6.1] C:\Users\user\.gradle\caches\8.8\transforms\1b1fb6b7362be798cf97466abafe8241\transformed\material-1.6.1\AndroidManifest.xml:24:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\user\.gradle\caches\8.8\transforms\7e391edc7d1d7c414a5793dfe8813189\transformed\constraintlayout-2.0.1\AndroidManifest.xml:9:5-20
@@ -169,83 +193,83 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] C:\Users\us
 MERGED from [com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:11:5-15:19
 MERGED from [com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:11:5-15:19
 	android:extractNativeLibs
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:26:7-33
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:50:7-33
 	android:label
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:20:7-34
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:44:7-34
 	android:roundIcon
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:22:7-52
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:46:7-52
 	android:icon
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:21:7-41
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:45:7-41
 	android:allowBackup
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:23:7-34
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:47:7-34
 	android:theme
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:24:7-38
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:48:7-38
 	android:usesCleartextTraffic
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:25:7-42
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:49:7-42
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:19:7-38
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:43:7-38
 meta-data#com.google.firebase.messaging.default_notification_channel_id
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:40:7-42:55
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:64:7-66:55
 	android:value
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:42:11-52
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:66:11-52
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:41:11-87
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:65:11-87
 meta-data#com.google.firebase.messaging.default_notification_icon
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:43:7-45:52
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:67:7-69:52
 	android:resource
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:45:11-49
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:69:11-49
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:44:11-81
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:68:11-81
 activity#com.ficmanagerapp.MainActivity
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:47:7-58:18
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:71:7-82:18
 	android:label
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:49:9-36
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:73:9-36
 	android:launchMode
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:51:9-40
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:75:9-40
 	android:windowSoftInputMode
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:52:9-51
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:76:9-51
 	android:exported
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:53:9-32
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:77:9-32
 	android:configChanges
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:50:9-118
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:74:9-118
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:48:9-37
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:72:9-37
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:54:9-57:25
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:78:9-81:25
 action#android.intent.action.MAIN
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:55:13-65
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:79:13-65
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:55:21-62
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:79:21-62
 category#android.intent.category.LAUNCHER
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:56:13-73
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:80:13-73
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:56:23-70
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:80:23-70
 meta-data#android.support.FILE_PROVIDER_PATHS
-ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:34:11-36:52
+ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:58:11-60:52
 	android:resource
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:36:15-49
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:60:15-49
 	android:name
-		ADDED from T:\frontend\android\app\src\main\AndroidManifest.xml:35:15-65
+		ADDED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:59:15-65
 uses-sdk
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
-INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
-MERGED from [:react-native-gesture-handler] T:\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-gesture-handler] T:\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-safe-area-context] T:\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-safe-area-context] T:\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-screens] T:\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-screens] T:\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-reanimated] T:\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-reanimated] T:\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-svg] T:\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-svg] T:\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-vector-icons] T:\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
-MERGED from [:react-native-vector-icons] T:\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
+INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
+MERGED from [:react-native-gesture-handler] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-gesture-handler] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-safe-area-context] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-safe-area-context] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-screens] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-screens] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-screens\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-reanimated] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-reanimated] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-reanimated\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-svg] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-svg] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-svg\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-vector-icons] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
+MERGED from [:react-native-vector-icons] C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-vector-icons\android\build\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:5:5-44
 MERGED from [com.facebook.react:react-android:0.75.2] C:\Users\user\.gradle\caches\8.8\transforms\be399dcb2f4b5abe0bfc27fefd11d639\transformed\jetified-react-android-0.75.2-release\AndroidManifest.xml:10:5-44
 MERGED from [com.facebook.react:react-android:0.75.2] C:\Users\user\.gradle\caches\8.8\transforms\be399dcb2f4b5abe0bfc27fefd11d639\transformed\jetified-react-android-0.75.2-release\AndroidManifest.xml:10:5-44
 MERGED from [com.google.android.material:material:1.6.1] C:\Users\user\.gradle\caches\8.8\transforms\1b1fb6b7362be798cf97466abafe8241\transformed\material-1.6.1\AndroidManifest.xml:20:5-22:41
@@ -371,9 +395,9 @@ MERGED from [com.facebook.fbjni:fbjni:0.6.0] C:\Users\user\.gradle\caches\8.8\tr
 MERGED from [com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:7:5-9:41
 MERGED from [com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:7:5-9:41
 	android:targetSdkVersion
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from T:\frontend\android\app\src\main\AndroidManifest.xml
+		INJECTED from C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml
 provider#androidx.startup.InitializationProvider
 ADDED from [androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
 MERGED from [androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:24:9-32:20

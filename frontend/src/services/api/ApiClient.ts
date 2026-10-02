@@ -164,6 +164,7 @@ export class ApiClient {
         const result = await new Promise<ApiResponseEnvelope<T>>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', targetUrl, true);
+          xhr.timeout = 2500;
           xhr.setRequestHeader('Accept', 'application/json');
 
           if (options.token) {

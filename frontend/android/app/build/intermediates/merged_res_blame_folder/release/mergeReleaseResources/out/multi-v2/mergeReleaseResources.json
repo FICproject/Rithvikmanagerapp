@@ -4357,23 +4357,6 @@
                     }
                 },
                 {
-                    "source": "T:\\frontend\\android\\app\\src\\main\\res\\values\\colors.xml",
-                    "from": {
-                        "startLines": "2",
-                        "startColumns": "4",
-                        "startOffsets": "55",
-                        "endColumns": "56",
-                        "endOffsets": "107"
-                    },
-                    "to": {
-                        "startLines": "553",
-                        "startColumns": "4",
-                        "startOffsets": "29217",
-                        "endColumns": "56",
-                        "endOffsets": "29269"
-                    }
-                },
-                {
                     "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\23757421be548562bddb04385c035752\\transformed\\jetified-startup-runtime-1.1.1\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2",
@@ -4444,23 +4427,6 @@
                     }
                 },
                 {
-                    "source": "T:\\frontend\\android\\app\\build\\generated\\res\\resValues\\release\\values\\gradleResValues.xml",
-                    "from": {
-                        "startLines": "6",
-                        "startColumns": "4",
-                        "startOffsets": "159",
-                        "endColumns": "63",
-                        "endOffsets": "218"
-                    },
-                    "to": {
-                        "startLines": "1503",
-                        "startColumns": "4",
-                        "startOffsets": "92650",
-                        "endColumns": "63",
-                        "endOffsets": "92709"
-                    }
-                },
-                {
                     "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\2404e6d4d79adb838696ea0df332aefa\\transformed\\drawerlayout-1.1.1\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2,3,4,5",
@@ -4480,6 +4446,25 @@
                     }
                 },
                 {
+                    "source": "C:\\Users\\user\\Downloads\\Forge intern\\FIC Manager App\\frontend\\android\\app\\src\\main\\res\\values\\styles.xml",
+                    "from": {
+                        "startLines": "1",
+                        "startColumns": "4",
+                        "startOffsets": "16",
+                        "endLines": "3",
+                        "endColumns": "12",
+                        "endOffsets": "152"
+                    },
+                    "to": {
+                        "startLines": "1714",
+                        "startColumns": "4",
+                        "startOffsets": "117833",
+                        "endLines": "1716",
+                        "endColumns": "12",
+                        "endOffsets": "117969"
+                    }
+                },
+                {
                     "source": "C:\\Users\\user\\.gradle\\caches\\8.8\\transforms\\6e21667032ce0725422993f55b5fae27\\transformed\\coordinatorlayout-1.2.0\\res\\values\\values.xml",
                     "from": {
                         "startLines": "2,3,6,16",
@@ -4496,6 +4481,23 @@
                         "endLines": "71,8116,9418,9502",
                         "endColumns": "60,12,24,24",
                         "endOffsets": "3757,541794,598944,603460"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\user\\Downloads\\Forge intern\\FIC Manager App\\frontend\\android\\app\\build\\generated\\res\\resValues\\release\\values\\gradleResValues.xml",
+                    "from": {
+                        "startLines": "6",
+                        "startColumns": "4",
+                        "startOffsets": "159",
+                        "endColumns": "63",
+                        "endOffsets": "218"
+                    },
+                    "to": {
+                        "startLines": "1503",
+                        "startColumns": "4",
+                        "startOffsets": "92650",
+                        "endColumns": "63",
+                        "endOffsets": "92709"
                     }
                 },
                 {
@@ -4551,6 +4553,23 @@
                         "endLines": "362,486,487,500,501,710,711,821,822,823,824,825,826,827,1286,1287,1288,1289,1290,1291,1292,1293,1294,1295,1296,1297,1298,1299,1300,1324,1325,1326,1330,1331,1332,1333,1334,1335,1336,1337,1338,1339,1340,1341,1342,1343,1344,1345,1346,1347,1348,1349,1350,1351,1352,1353,1354,1355,1356,1357,1358,1359,1360,1361,1381,1382,1412,1413,1414,1415,1416,1417,1418,1419,1420,1421,1422,1423,1424,1425,1426,1434,1505,1542,1543,1544,1545,1546,1547,1548,1685,5342,5346,5347,5351,5352,6440,6441,9037,9380,9632,9653,9835,9841",
                         "endColumns": "59,71,87,64,65,68,62,69,67,71,69,60,73,72,60,60,61,63,61,60,67,99,59,65,72,68,56,51,61,71,75,64,58,58,59,59,59,59,59,59,59,59,59,59,58,59,59,59,59,59,59,59,59,59,59,58,59,59,58,58,58,58,58,58,34,34,54,62,54,57,57,60,62,56,50,49,60,56,65,33,34,34,69,66,71,68,68,73,71,87,70,116,12,109,12,128,71,66,24,24,24,24,24,24",
                         "endOffsets": "18160,24554,24642,25667,25733,40640,40703,48075,48143,48215,48285,48346,48420,48493,80202,80263,80325,80389,80451,80512,80580,80680,80740,80806,80879,80948,81005,81057,81119,82743,82819,82884,83107,83166,83226,83286,83346,83406,83466,83526,83586,83646,83706,83766,83825,83885,83945,84005,84065,84125,84185,84245,84305,84365,84425,84484,84544,84604,84663,84722,84781,84840,84899,84958,85919,85954,87522,87585,87640,87698,87756,87817,87880,87937,87988,88038,88099,88156,88222,88256,88291,88673,92836,95808,95880,95949,96018,96092,96164,96252,115561,361900,362101,362211,362412,362541,437124,437191,573601,585102,608411,609092,614169,614336"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\user\\Downloads\\Forge intern\\FIC Manager App\\frontend\\android\\app\\src\\main\\res\\values\\colors.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "56",
+                        "endOffsets": "107"
+                    },
+                    "to": {
+                        "startLines": "553",
+                        "startColumns": "4",
+                        "startOffsets": "29217",
+                        "endColumns": "56",
+                        "endOffsets": "29269"
                     }
                 },
                 {
@@ -4663,25 +4682,6 @@
                         "endLines": "10848",
                         "endColumns": "24",
                         "endOffsets": "655141"
-                    }
-                },
-                {
-                    "source": "T:\\frontend\\android\\app\\src\\main\\res\\values\\styles.xml",
-                    "from": {
-                        "startLines": "1",
-                        "startColumns": "4",
-                        "startOffsets": "16",
-                        "endLines": "3",
-                        "endColumns": "12",
-                        "endOffsets": "152"
-                    },
-                    "to": {
-                        "startLines": "1714",
-                        "startColumns": "4",
-                        "startOffsets": "117833",
-                        "endLines": "1716",
-                        "endColumns": "12",
-                        "endOffsets": "117969"
                     }
                 },
                 {

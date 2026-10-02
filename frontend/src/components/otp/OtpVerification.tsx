@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useImperativeHandle,
   forwardRef,
+  useEffect,
 } from 'react';
 import {
   StyleSheet,
@@ -15,18 +16,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  withSequence,
-  withDelay,
-  runOnJS,
-  useReducedMotion,
-  interpolate,
-} from 'react-native-reanimated';
 import { OTP_CONFIG } from './otpConfig';
 import { OtpVerificationProps, OtpVerificationRef, OtpPhase } from './types';
 import { OtpBox } from './OtpBox';
@@ -52,44 +43,46 @@ export const OtpVerification = React.memo(
       const { width: windowWidth } = useWindowDimensions();
       const cardWidth = Math.min(windowWidth - 32, 360);
 
-      // Reduced motion hook from Reanimated
-      const reducedMotion = useReducedMotion();
-
-      // State machine phase
       const [phase, setPhase] = useState<OtpPhase>('typing');
       const [code, setCode] = useState('');
 
       const inputRef = useRef<TextInput>(null);
 
-      // Animation shared values
-      const gatherProgress = useSharedValue(0);
-      const orbitSpinProgress = useSharedValue(0);
-      const colorProgress = useSharedValue(0);
-      const collapseProgress = useSharedValue(0);
-      const centerSquareScale = useSharedValue(0);
-      const burstProgress = useSharedValue(0);
-      const checkProgress = useSharedValue(0);
-      const textFadeProgress = useSharedValue(0);
-      const textSuccessProgress = useSharedValue(0);
-      const shakeX = useSharedValue(0);
+      // Core Animated Values
+      const gatherProgress = useRef(new Animated.Value(0)).current;
+      const orbitSpinProgress = useRef(new Animated.Value(0)).current;
+      const colorProgress = useRef(new Animated.Value(0)).current;
+      const collapseProgress = useRef(new Animated.Value(0)).current;
+      const centerSquareScale = useRef(new Animated.Value(0)).current;
+      const burstProgress = useRef(new Animated.Value(0)).current;
+      const checkProgress = useRef(new Animated.Value(0)).current;
+      const textSuccessProgress = useRef(new Animated.Value(0)).current;
+      const shakeX = useRef(new Animated.Value(0)).current;
 
-      // Reset to initial typing state
+      // Auto-focus on mount
+      useEffect(() => {
+        const timer = setTimeout(() => {
+          inputRef.current?.focus();
+        }, 200);
+        return () => clearTimeout(timer);
+      }, []);
+
+      // Reset animation state
       const reset = useCallback(() => {
-        gatherProgress.value = 0;
-        orbitSpinProgress.value = 0;
-        colorProgress.value = 0;
-        collapseProgress.value = 0;
-        centerSquareScale.value = 0;
-        burstProgress.value = 0;
-        checkProgress.value = 0;
-        textFadeProgress.value = 0;
-        textSuccessProgress.value = 0;
-        shakeX.value = 0;
+        gatherProgress.setValue(0);
+        orbitSpinProgress.setValue(0);
+        colorProgress.setValue(0);
+        collapseProgress.setValue(0);
+        centerSquareScale.setValue(0);
+        burstProgress.setValue(0);
+        checkProgress.setValue(0);
+        textSuccessProgress.setValue(0);
+        shakeX.setValue(0);
         setCode('');
         setPhase('typing');
         setTimeout(() => {
           inputRef.current?.focus();
-        }, 80);
+        }, 100);
       }, [
         gatherProgress,
         orbitSpinProgress,
@@ -98,187 +91,105 @@ export const OtpVerification = React.memo(
         centerSquareScale,
         burstProgress,
         checkProgress,
-        textFadeProgress,
         textSuccessProgress,
         shakeX,
       ]);
 
-      const resetToTyping = useCallback(() => {
-        shakeX.value = 0;
-        setCode('');
-        setPhase('typing');
-        inputRef.current?.focus();
-      }, [shakeX]);
-
-      const notifyVerified = useCallback(() => {
-        onVerified?.();
-      }, [onVerified]);
-
-      // Phase 5: Success animation
-      const startSuccess = useCallback(() => {
-        setPhase('success');
-        triggerHaptic('notificationSuccess');
-
-        // Center square pops in
-        centerSquareScale.value = withSpring(1, {
-          damping: 14,
-          stiffness: 180,
-        });
-
-        // Checkmark draws (~350ms)
-        checkProgress.value = withTiming(1, {
-          duration: OTP_CONFIG.TIMINGS.SUCCESS_CHECK,
-        });
-
-        // Rings expand & particle burst (~750ms)
-        burstProgress.value = withTiming(1, {
-          duration: OTP_CONFIG.TIMINGS.SUCCESS_BURST,
-          easing: OTP_CONFIG.EASINGS.success,
-        });
-
-        // Header text fades in and slides up 6px
-        textSuccessProgress.value = withTiming(
-          1,
-          { duration: OTP_CONFIG.TIMINGS.SUCCESS_TEXT },
-          (finished) => {
-            if (finished) {
-              runOnJS(notifyVerified)();
-            }
-          }
-        );
-      }, [
-        centerSquareScale,
-        checkProgress,
-        burstProgress,
-        textSuccessProgress,
-        notifyVerified,
-      ]);
-
-      // Phase 4: Collapse animation
-      const startCollapse = useCallback(() => {
-        setPhase('collapse');
-
-        // Header fades down
-        textFadeProgress.value = withDelay(
-          OTP_CONFIG.TIMINGS.COLLAPSE_HOLD,
-          withTiming(1, { duration: OTP_CONFIG.TIMINGS.COLLAPSE })
-        );
-
-        // Boxes scale down to 0.2 and translate to center
-        collapseProgress.value = withDelay(
-          OTP_CONFIG.TIMINGS.COLLAPSE_HOLD,
-          withTiming(
-            1,
-            {
-              duration: OTP_CONFIG.TIMINGS.COLLAPSE,
-              easing: OTP_CONFIG.EASINGS.collapse,
-            },
-            (finished) => {
-              if (finished) {
-                runOnJS(startSuccess)();
-              }
-            }
-          )
-        );
-      }, [collapseProgress, textFadeProgress, startSuccess]);
-
-      // Phase 3: Orbit spin animation
-      const startOrbit = useCallback(() => {
-        setPhase('orbit');
-
-        // Spin ring ~450°
-        orbitSpinProgress.value = withTiming(1, {
-          duration: OTP_CONFIG.TIMINGS.ORBIT_SPIN,
-          easing: OTP_CONFIG.EASINGS.spin,
-        });
-
-        // Cross-fade colors to emerald while settling
-        const colorDelay = Math.max(
-          0,
-          OTP_CONFIG.TIMINGS.ORBIT_SPIN - OTP_CONFIG.TIMINGS.COLOR_TRANSITION
-        );
-
-        colorProgress.value = withDelay(
-          colorDelay,
-          withTiming(
-            1,
-            { duration: OTP_CONFIG.TIMINGS.COLOR_TRANSITION },
-            (finished) => {
-              if (finished) {
-                runOnJS(startCollapse)();
-              }
-            }
-          )
-        );
-      }, [orbitSpinProgress, colorProgress, startCollapse]);
-
-      // Phase 2: Gather animation
-      const startGather = useCallback(() => {
-        setPhase('gather');
-
-        gatherProgress.value = withTiming(
-          1,
-          {
-            duration: OTP_CONFIG.TIMINGS.GATHER,
-            easing: OTP_CONFIG.EASINGS.gather,
-          },
-          (finished) => {
-            if (finished) {
-              runOnJS(startOrbit)();
-            }
-          }
-        );
-      }, [gatherProgress, startOrbit]);
-
-      // Reduced motion bypass
-      const runReducedMotionSuccess = useCallback(() => {
-        setPhase('success');
-        triggerHaptic('notificationSuccess');
-
-        colorProgress.value = 1;
-        centerSquareScale.value = 1;
-        checkProgress.value = 1;
-        burstProgress.value = 1;
-
-        textFadeProgress.value = withTiming(1, { duration: 300 });
-        textSuccessProgress.value = withDelay(
-          150,
-          withTiming(1, { duration: 350 }, (finished) => {
-            if (finished) {
-              runOnJS(notifyVerified)();
-            }
-          })
-        );
-      }, [
-        colorProgress,
-        centerSquareScale,
-        checkProgress,
-        burstProgress,
-        textFadeProgress,
-        textSuccessProgress,
-        notifyVerified,
-      ]);
-
-      // Trigger shake error
+      // Error shake
       const triggerError = useCallback(() => {
         triggerHaptic('notificationError');
         setPhase('error');
 
-        shakeX.value = withSequence(
-          withTiming(-12, { duration: 55 }),
-          withTiming(12, { duration: 65 }),
-          withTiming(-8, { duration: 60 }),
-          withTiming(8, { duration: 60 }),
-          withTiming(-4, { duration: 50 }),
-          withTiming(0, { duration: 50 }, (finished) => {
-            if (finished) {
-              runOnJS(resetToTyping)();
-            }
-          })
-        );
-      }, [shakeX, resetToTyping]);
+        Animated.sequence([
+          Animated.timing(shakeX, { toValue: -12, duration: 55, useNativeDriver: true }),
+          Animated.timing(shakeX, { toValue: 12, duration: 65, useNativeDriver: true }),
+          Animated.timing(shakeX, { toValue: -8, duration: 60, useNativeDriver: true }),
+          Animated.timing(shakeX, { toValue: 8, duration: 60, useNativeDriver: true }),
+          Animated.timing(shakeX, { toValue: -4, duration: 50, useNativeDriver: true }),
+          Animated.timing(shakeX, { toValue: 0, duration: 50, useNativeDriver: true }),
+        ]).start(() => {
+          setCode('');
+          setPhase('typing');
+          inputRef.current?.focus();
+        });
+      }, [shakeX]);
 
-      // Handle full code entry
+      // Success animation sequence
+      const startSuccessAnimation = useCallback(() => {
+        setPhase('gather');
+
+        // Step 1: Gather to circle
+        Animated.timing(gatherProgress, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => {
+          setPhase('orbit');
+          // Step 2: Spin and change color
+          Animated.parallel([
+            Animated.timing(orbitSpinProgress, {
+              toValue: 1,
+              duration: 700,
+              useNativeDriver: true,
+            }),
+            Animated.timing(colorProgress, {
+              toValue: 1,
+              duration: 350,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setPhase('collapse');
+            // Step 3: Collapse to center
+            Animated.timing(collapseProgress, {
+              toValue: 1,
+              duration: 350,
+              useNativeDriver: true,
+            }).start(() => {
+              setPhase('success');
+              triggerHaptic('notificationSuccess');
+
+              // Step 4: Success burst, checkmark & header text
+              Animated.parallel([
+                Animated.spring(centerSquareScale, {
+                  toValue: 1,
+                  friction: 6,
+                  tension: 160,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(checkProgress, {
+                  toValue: 1,
+                  duration: 350,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(burstProgress, {
+                  toValue: 1,
+                  duration: 650,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(textSuccessProgress, {
+                  toValue: 1,
+                  duration: 350,
+                  useNativeDriver: true,
+                }),
+              ]).start(() => {
+                onVerified?.();
+              });
+            });
+          });
+        });
+      }, [
+        gatherProgress,
+        orbitSpinProgress,
+        colorProgress,
+        collapseProgress,
+        centerSquareScale,
+        checkProgress,
+        burstProgress,
+        textSuccessProgress,
+        onVerified,
+      ]);
+
+      // Full code submission
       const handleFullCode = useCallback(
         async (finalCode: string) => {
           Keyboard.dismiss();
@@ -286,47 +197,21 @@ export const OtpVerification = React.memo(
 
           if (verify) {
             setPhase('verifying');
-            const startTime = Date.now();
-
             try {
               const isValid = await verify(finalCode);
-              const elapsed = Date.now() - startTime;
-              const remainingWait = Math.max(
-                0,
-                OTP_CONFIG.TIMINGS.VERIFY_PENDING_MIN - elapsed
-              );
-
-              setTimeout(() => {
-                if (isValid) {
-                  if (reducedMotion) {
-                    runReducedMotionSuccess();
-                  } else {
-                    startGather();
-                  }
-                } else {
-                  triggerError();
-                }
-              }, remainingWait);
+              if (isValid) {
+                startSuccessAnimation();
+              } else {
+                triggerError();
+              }
             } catch {
               triggerError();
             }
           } else {
-            // Direct flow
-            if (reducedMotion) {
-              runReducedMotionSuccess();
-            } else {
-              startGather();
-            }
+            startSuccessAnimation();
           }
         },
-        [
-          onComplete,
-          verify,
-          reducedMotion,
-          runReducedMotionSuccess,
-          startGather,
-          triggerError,
-        ]
+        [onComplete, verify, startSuccessAnimation, triggerError]
       );
 
       // Handle input text changes
@@ -334,7 +219,6 @@ export const OtpVerification = React.memo(
         (text: string) => {
           if (phase !== 'typing') return;
 
-          // Digits only
           const cleaned = text.replace(/[^0-9]/g, '').slice(0, length);
           setCode(cleaned);
 
@@ -376,67 +260,29 @@ export const OtpVerification = React.memo(
         [reset, code, length, handleFullCode]
       );
 
-      // Wrapper animated styles for 450° orbit rotation & tilt
-      const orbitWrapperStyle = useAnimatedStyle(() => {
-        const s = orbitSpinProgress.value;
-        const rotateZ = s * 450;
-        // Subtle tilt on x-axis during spin
-        const tiltX = Math.sin(s * Math.PI) * 14;
-
-        // Dynamic drop shadow during movement
-        const shadowOpacity = interpolate(s, [0, 0.5, 1], [0, 0.45, 0.1]);
-
-        return {
-          shadowOpacity,
-          transform: [
-            { perspective: 800 },
-            { rotate: `${rotateZ}deg` },
-            { rotateX: `${tiltX}deg` },
-          ],
-        };
-      });
-
-      // Horizontal shake animated style
-      const shakeStyle = useAnimatedStyle(() => {
-        return {
-          transform: [{ translateX: shakeX.value }],
-        };
-      });
-
-      // Default header animated style (fades out on collapse & success)
-      const defaultHeaderStyle = useAnimatedStyle(() => {
-        const opacity = (1 - textFadeProgress.value) * (1 - textSuccessProgress.value);
-        return {
-          opacity,
-        };
-      });
-
-      // Success header animated style (fades in and slides up 6px)
-      const successHeaderStyle = useAnimatedStyle(() => {
-        const opacity = textSuccessProgress.value;
-        const translateY = (1 - textSuccessProgress.value) * 6;
-        return {
-          opacity,
-          transform: [{ translateY }],
-        };
-      });
-
-      // Center square animated style in success phase
-      const centerSquareStyle = useAnimatedStyle(() => {
-        // Appears at end of collapse
-        const scale =
-          collapseProgress.value >= 0.95
-            ? Math.max(centerSquareScale.value, (collapseProgress.value - 0.95) / 0.05)
-            : 0;
-
-        return {
-          transform: [{ scale }],
-        };
-      });
-
-      // Build 4 digit slots
+      // Digits array
       const digits = Array.from({ length }, (_, i) => code[i] || '');
       const activeIndex = Math.min(code.length, length - 1);
+
+      // Spin rotation
+      const spinRotate = orbitSpinProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: ['0deg', '450deg'],
+      });
+
+      // Headers opacity
+      const defaultHeaderOpacity = textSuccessProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+      });
+      const successHeaderOpacity = textSuccessProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+      });
+      const successHeaderTranslateY = textSuccessProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [6, 0],
+      });
 
       return (
         <KeyboardAvoidingView
@@ -451,26 +297,35 @@ export const OtpVerification = React.memo(
               {/* Title & Subtitle Header Container */}
               <View style={styles.headerContainer}>
                 {/* Default Header */}
-                <Animated.View style={[styles.headerContent, defaultHeaderStyle]}>
+                <Animated.View
+                  style={[
+                    styles.headerContent,
+                    { opacity: defaultHeaderOpacity },
+                  ]}
+                  pointerEvents="none"
+                >
                   <Text style={styles.title}>{title}</Text>
                   <Text style={styles.subtitle}>
                     {subtitle ? (
                       subtitle
                     ) : (
                       <>
-                        Enter the {length}-digit code we sent to{' '}
-                        <Text style={styles.phoneHighlight}>{phoneNumber}</Text>.
+                        Enter the {length}-digit code sent to{' '}
+                        <Text style={styles.phoneHighlight}>{phoneNumber}</Text>
                       </>
                     )}
                   </Text>
                 </Animated.View>
 
-                {/* Success Header (Cross-fade & Slide Up 6px) */}
+                {/* Success Header */}
                 <Animated.View
                   style={[
                     styles.headerContent,
                     styles.absoluteHeader,
-                    successHeaderStyle,
+                    {
+                      opacity: successHeaderOpacity,
+                      transform: [{ translateY: successHeaderTranslateY }],
+                    },
                   ]}
                   pointerEvents="none"
                 >
@@ -478,15 +333,26 @@ export const OtpVerification = React.memo(
                     Verified successfully
                   </Text>
                   <Text style={styles.subtitle}>
-                    Your number has been verified.
+                    Your number has been verified. Redirecting...
                   </Text>
                 </Animated.View>
               </View>
 
               {/* Animation Stage */}
-              <Animated.View style={[styles.stageContainer, shakeStyle]}>
+              <Animated.View
+                style={[
+                  styles.stageContainer,
+                  { transform: [{ translateX: shakeX }] },
+                ]}
+                pointerEvents="none"
+              >
                 {/* Rotating Orbit Ring & Digit Boxes */}
-                <Animated.View style={[styles.orbitWrapper, orbitWrapperStyle]}>
+                <Animated.View
+                  style={[
+                    styles.orbitWrapper,
+                    { transform: [{ rotate: spinRotate }] },
+                  ]}
+                >
                   <OrbitRing
                     gatherProgress={gatherProgress}
                     colorProgress={colorProgress}
@@ -502,7 +368,6 @@ export const OtpVerification = React.memo(
                       isActive={index === activeIndex}
                       phase={phase}
                       gatherProgress={gatherProgress}
-                      orbitSpinProgress={orbitSpinProgress}
                       colorProgress={colorProgress}
                       collapseProgress={collapseProgress}
                     />
@@ -514,9 +379,11 @@ export const OtpVerification = React.memo(
                   <View style={styles.successWrapper} pointerEvents="none">
                     <SuccessBurst progress={burstProgress} />
 
-                    {/* Green-outlined Rounded Square */}
                     <Animated.View
-                      style={[styles.centerSquare, centerSquareStyle]}
+                      style={[
+                        styles.centerSquare,
+                        { transform: [{ scale: centerSquareScale }] },
+                      ]}
                     >
                       <Checkmark progress={checkProgress} />
                     </Animated.View>
@@ -524,7 +391,7 @@ export const OtpVerification = React.memo(
                 )}
               </Animated.View>
 
-              {/* Hidden Real TextInput for Native Keyboard & SMS Autofill */}
+              {/* Real TextInput for Native Keyboard & SMS Autofill */}
               <TextInput
                 ref={inputRef}
                 style={styles.hiddenInput}
@@ -560,6 +427,7 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     paddingHorizontal: 20,
     alignItems: 'center',
+    position: 'relative',
     ...Platform.select({
       ios: {
         shadowColor: '#0F172A',
@@ -637,13 +505,6 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowRadius: 10,
-      },
-    }),
   },
   successWrapper: {
     ...StyleSheet.absoluteFillObject,
@@ -654,7 +515,7 @@ const styles = StyleSheet.create({
     width: OTP_CONFIG.CENTER_SQUARE_SIZE,
     height: OTP_CONFIG.CENTER_SQUARE_SIZE,
     borderRadius: OTP_CONFIG.BOX_RADIUS,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: OTP_CONFIG.COLORS.accentEmerald,
     backgroundColor: OTP_CONFIG.COLORS.accentFill,
     justifyContent: 'center',
@@ -674,6 +535,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0.001,
+    opacity: 0.01,
   },
 });

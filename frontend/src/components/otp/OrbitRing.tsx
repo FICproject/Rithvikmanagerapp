@@ -1,55 +1,44 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Animated } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
-import Animated, {
-  useAnimatedStyle,
-  interpolateColor,
-  SharedValue,
-} from 'react-native-reanimated';
 import { OTP_CONFIG } from './otpConfig';
 
 interface OrbitRingProps {
-  gatherProgress: SharedValue<number>;
-  colorProgress: SharedValue<number>;
-  collapseProgress: SharedValue<number>;
+  gatherProgress: Animated.Value;
+  colorProgress: Animated.Value;
+  collapseProgress: Animated.Value;
 }
 
 export const OrbitRing: React.FC<OrbitRingProps> = React.memo(
   ({ gatherProgress, colorProgress, collapseProgress }) => {
-    const trackStyle = useAnimatedStyle(() => {
-      const opacity = gatherProgress.value * (1 - collapseProgress.value);
-      return {
-        opacity,
-      };
-    });
-
-    const dotStyle = useAnimatedStyle(() => {
-      const opacity = gatherProgress.value * (1 - collapseProgress.value);
-      const backgroundColor = interpolateColor(
-        colorProgress.value,
-        [0, 1],
-        [OTP_CONFIG.COLORS.centerDot, OTP_CONFIG.COLORS.accentEmerald]
-      );
-      return {
-        opacity,
-        backgroundColor,
-      };
-    });
-
-    const glowStyle = useAnimatedStyle(() => {
-      // Glow becomes visible as color turns emerald
-      const opacity = colorProgress.value * (1 - collapseProgress.value) * 0.8;
-      return {
-        opacity,
-      };
-    });
-
     const ringDiameter = OTP_CONFIG.ORBIT_RADIUS * 2;
+
+    const trackOpacity = gatherProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 1],
+    });
+
+    const collapseOpacity = collapseProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0],
+    });
+
+    const glowOpacity = colorProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, 0.85],
+    });
 
     return (
       <View style={styles.container} pointerEvents="none">
         {/* Orbit circular track */}
-        <Animated.View style={[styles.trackWrapper, trackStyle]}>
+        <Animated.View
+          style={[
+            styles.trackWrapper,
+            {
+              opacity: Animated.multiply(trackOpacity, collapseOpacity),
+            },
+          ]}
+        >
           <Svg
             width={ringDiameter + 2}
             height={ringDiameter + 2}
@@ -67,7 +56,7 @@ export const OrbitRing: React.FC<OrbitRingProps> = React.memo(
         </Animated.View>
 
         {/* Center dot glow */}
-        <Animated.View style={[styles.centerGlow, glowStyle]}>
+        <Animated.View style={[styles.centerGlow, { opacity: glowOpacity }]}>
           <Svg width={36} height={36} viewBox="0 0 36 36">
             <Defs>
               <RadialGradient id="centerDotGlow" cx="50%" cy="50%" rx="50%" ry="50%">
@@ -81,7 +70,28 @@ export const OrbitRing: React.FC<OrbitRingProps> = React.memo(
         </Animated.View>
 
         {/* Small center dot */}
-        <Animated.View style={[styles.centerDot, dotStyle]} />
+        <Animated.View
+          style={[
+            styles.centerDotWrapper,
+            {
+              opacity: Animated.multiply(trackOpacity, collapseOpacity),
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.centerDot,
+              { backgroundColor: OTP_CONFIG.COLORS.centerDot },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.centerDot,
+              styles.centerDotEmerald,
+              { opacity: colorProgress },
+            ]}
+          />
+        </Animated.View>
       </View>
     );
   }
@@ -105,10 +115,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  centerDot: {
+  centerDotWrapper: {
     position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 6,
+    height: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  centerDotEmerald: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    backgroundColor: OTP_CONFIG.COLORS.accentEmerald,
   },
 });

@@ -1,6 +1,6 @@
 <lint-module
     format="1"
-    dir="T:\frontend\android\app"
+    dir="C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app"
     name=":app"
     type="APP"
     maven="FICManagerApp:app:unspecified"

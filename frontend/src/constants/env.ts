@@ -18,5 +18,5 @@ export const ENV: AppEnvironment = {
   enableAnalytics: false,
   enablePushNotifications: false,
   apiTimeoutMs: 15000,
-  useMockData: false,
+  useMockData: true,
 };

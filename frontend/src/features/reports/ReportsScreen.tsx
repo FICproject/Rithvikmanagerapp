@@ -43,32 +43,63 @@ export interface ReportsScreenProps {
 
 const INITIAL_VISIT_RECORDS: VisitRecord[] = [
   {
+    id: 'visit_1700070001001_today_01',
+    shopName: 'Sri Foods & Groceries',
+    vendorCode: 'vendorSRIFOODS',
+    category: 'Daily Needs',
+    managerName: 'Ramesh Kumar',
+    managerRole: 'State Manager',
+    location: 'Parrys, Chennai',
+    pincode: '600001',
+    timestamp: 'Today, 10:15 AM',
+    isInterested: true,
+    photoUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
+    gpsCoords: '13.0891° N, 80.2872° E',
+  },
+  {
+    id: 'visit_1700070002002_today_02',
+    shopName: 'Apex Mobile & Electronics',
+    vendorCode: 'vendorAPEXMOB',
+    category: 'Product',
+    managerName: 'M. Selvi',
+    managerRole: 'Pincode Manager',
+    location: 'Parrys, Chennai',
+    pincode: '600001',
+    timestamp: 'Today, 11:30 AM',
+    isInterested: false,
+    reasonNotInterested: 'Owner currently committed to a separate 1-year POS contract with another payment aggregator.',
+    voiceNoteUri: 'file:///data/user/0/com.ficmanagerapp/cache/audio_sample_declined.m4a',
+    voiceNoteDuration: 18,
+    photoUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400',
+    gpsCoords: '13.0880° N, 80.2860° E',
+  },
+  {
     id: 'visit_1700069977654_op_jp9j',
     shopName: 'Sri Murugan Departmental Store',
     vendorCode: 'vendorMURUGAN',
-    category: 'Products',
-    managerName: 'Dinesh K',
+    category: 'Product',
+    managerName: 'K. Ananth',
     managerRole: 'Division Manager',
-    location: 'Salem',
-    pincode: '636102',
-    timestamp: '22 Sep 2026, 08:30 AM',
+    location: 'North Chennai',
+    pincode: '600001',
+    timestamp: '28 Sep 2026, 08:30 AM',
     isInterested: true,
     photoUrl: 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400',
-    gpsCoords: '11.6643° N, 78.1460° E',
+    gpsCoords: '13.0827° N, 80.2707° E',
   },
   {
     id: 'visit_1700069988123_sk_821a',
     shopName: 'Saravana Bhavan Hotel',
     vendorCode: 'vendorSARAVANA',
     category: 'Food',
-    managerName: 'Dinesh K',
-    managerRole: 'Division Manager',
-    location: 'Salem',
-    pincode: '636102',
-    timestamp: '23 Sep 2026, 10:15 AM',
+    managerName: 'Suresh Menon',
+    managerRole: 'District Manager',
+    location: 'Chennai',
+    pincode: '600002',
+    timestamp: '29 Sep 2026, 10:15 AM',
     isInterested: true,
     photoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400',
-    gpsCoords: '11.6680° N, 78.1490° E',
+    gpsCoords: '13.0604° N, 80.2496° E',
   },
   {
     id: 'visit_1700069999456_mn_112z',
@@ -79,7 +110,7 @@ const INITIAL_VISIT_RECORDS: VisitRecord[] = [
     managerRole: 'State Manager',
     location: 'Coimbatore',
     pincode: '641001',
-    timestamp: '24 Sep 2026, 02:45 PM',
+    timestamp: '30 Sep 2026, 02:45 PM',
     isInterested: true,
     photoUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400',
     gpsCoords: '11.0168° N, 76.9558° E',
@@ -248,46 +279,43 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
   };
 
   // Submit "+ Field Shop Visit" -> YES (Interested)
-  const handleProceedToOnboarding = async () => {
-    if (!formShopName.trim()) {
-      Alert.alert('Shop Name Required', 'Please enter the Shop Name / Business Title before proceeding.');
-      return;
-    }
-    if (!formPhotoCaptured || !formPhotoUri) {
-      Alert.alert('Storefront Photo Required', 'Please attach or upload a storefront photo before proceeding.');
-      return;
+  const handleProceedToOnboarding = () => {
+    const shopName = formShopName.trim() || 'New Store';
+    const category = formCategory || 'Service';
+    const photoUri = formPhotoUri;
+    const gpsCoords = formGpsCoords || undefined;
+
+    // Immediately close modal & reset form
+    setIsFieldVisitModalOpen(false);
+    resetVisitForm();
+
+    // Immediately navigate to 5-step Vendor Registration / Onboarding form
+    if (onNavigateRoute) {
+      onNavigateRoute('AddVendor', {
+        initialBusinessName: shopName,
+        initialCategory: category,
+        initialPhotoUri: photoUri || undefined,
+      });
     }
 
-    let uploadedPhotoUrl = formPhotoUri;
-    try {
-      uploadedPhotoUrl = await services.mediaUploadService.uploadShopPhoto(formPhotoUri);
-    } catch (e) {
-      console.warn('Photo upload warning:', e);
-    }
-
+    // Save field visit record in background
     const newRecord: VisitRecord = {
       id: `visit_${Date.now()}_op_${Math.random().toString(36).substring(2, 6)}`,
-      shopName: formShopName.trim(),
-      vendorCode: `vendor${formShopName.replaceAll(/\s+/g, '').toUpperCase().slice(0, 8)}`,
-      category: formCategory,
+      shopName,
+      vendorCode: `vendor${shopName.replaceAll(/\s+/g, '').toUpperCase().slice(0, 8)}`,
+      category,
       managerName: manager?.name || 'Manager',
       managerRole: manager?.role ? manager.role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Manager',
       location: 'Salem',
       pincode: '636102',
       timestamp: 'Just now',
       isInterested: true,
-      photoUrl: uploadedPhotoUrl,
-      gpsCoords: formGpsCoords || undefined,
+      photoUrl: photoUri || undefined,
+      gpsCoords,
     };
 
-    await services.fieldVisitService.addVisitRecord(newRecord);
     setRecords(prev => [newRecord, ...prev]);
-    setIsFieldVisitModalOpen(false);
-    resetVisitForm();
-
-    if (onNavigateRoute) {
-      onNavigateRoute('AddVendor', { initialBusinessName: formShopName.trim(), initialCategory: formCategory });
-    }
+    services.fieldVisitService.addVisitRecord(newRecord).catch(() => {});
   };
 
   // Submit "+ Field Shop Visit" -> NO (Not Interested)
@@ -704,7 +732,12 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalScrollBody} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.modalScrollBody}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {/* STEP 1: Shop Details & Category */}
               <View style={styles.stepBox}>
                 <View style={styles.stepHeaderRow}>
@@ -715,11 +748,11 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                 </View>
 
                 <View style={styles.stepInputsRow}>
-                  <View style={[styles.inputGroupCol, { flex: 1.2 }]}>
-                    <Text style={styles.fieldLabel}>Shop Name / Business Title</Text>
+                  <View style={[styles.inputGroupCol, { flex: 1.25 }]}>
+                    <Text style={styles.fieldLabel}>Shop Name / Title</Text>
                     <TextInput
                       style={styles.textInputStyle}
-                      placeholder="e.g. Sri Lakshmi Supermarket"
+                      placeholder="e.g. Sri Lakshmi Store"
                       placeholderTextColor="#94A3B8"
                       value={formShopName}
                       onChangeText={setFormShopName}
@@ -727,14 +760,16 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   </View>
 
                   <View style={[styles.inputGroupCol, { flex: 1 }]}>
-                    <Text style={styles.fieldLabel}>Business Category</Text>
+                    <Text style={styles.fieldLabel}>Category</Text>
                     <TouchableOpacity
                       style={styles.selectCategoryBtn}
                       onPress={() => setShowFormCategoryModal(true)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.selectCategoryText}>{formCategory}</Text>
-                      <Icon name="chevron-down" size={18} color="#64748B" />
+                      <Text style={styles.selectCategoryText} numberOfLines={1}>
+                        {formCategory}
+                      </Text>
+                      <Icon name="chevron-down" size={16} color="#64748B" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -810,8 +845,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                         onPress={() => handleCapturePhoto('camera')}
                         activeOpacity={0.8}
                       >
-                        <Icon name="camera" size={16} color="#1D4ED8" style={{ marginRight: 6 }} />
-                        <Text style={styles.quickActionBtnText}>Real Camera</Text>
+                        <Icon name="camera" size={15} color="#1D4ED8" style={{ marginRight: 4 }} />
+                        <Text style={styles.quickActionBtnText} numberOfLines={1}>Real Camera</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -819,8 +854,8 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                         onPress={() => handleCapturePhoto('gallery')}
                         activeOpacity={0.8}
                       >
-                        <Icon name="image-multiple" size={16} color="#16A34A" style={{ marginRight: 6 }} />
-                        <Text style={[styles.quickActionBtnText, { color: '#15803D' }]}>Device Gallery</Text>
+                        <Icon name="image-multiple" size={15} color="#16A34A" style={{ marginRight: 4 }} />
+                        <Text style={[styles.quickActionBtnText, { color: '#15803D' }]} numberOfLines={1}>Device Gallery</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -847,18 +882,31 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   >
                     <Icon
                       name="thumb-up-outline"
-                      size={20}
+                      size={18}
                       color={formInterestStatus === 'YES' ? '#059669' : '#475569'}
-                      style={{ marginRight: 6 }}
+                      style={styles.interestBtnIcon}
                     />
-                    <Text
-                      style={[
-                        styles.interestBtnText,
-                        formInterestStatus === 'YES' && styles.interestBtnTextYes,
-                      ]}
-                    >
-                      YES (Interested)
-                    </Text>
+                    <View style={styles.interestBtnTextGroup}>
+                      <Text
+                        style={[
+                          styles.interestBtnMainText,
+                          formInterestStatus === 'YES' && styles.interestBtnTextYes,
+                        ]}
+                      >
+                        YES
+                      </Text>
+                      <Text
+                        style={[
+                          styles.interestBtnSubText,
+                          formInterestStatus === 'YES' && styles.interestBtnTextYes,
+                        ]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                      >
+                        Interested
+                      </Text>
+                    </View>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -871,18 +919,31 @@ export const ReportsScreen: React.FC<ReportsScreenProps> = ({
                   >
                     <Icon
                       name="thumb-down-outline"
-                      size={20}
+                      size={18}
                       color={formInterestStatus === 'NO' ? '#DC2626' : '#475569'}
-                      style={{ marginRight: 6 }}
+                      style={styles.interestBtnIcon}
                     />
-                    <Text
-                      style={[
-                        styles.interestBtnText,
-                        formInterestStatus === 'NO' && styles.interestBtnTextNo,
-                      ]}
-                    >
-                      NO (Not Interested)
-                    </Text>
+                    <View style={styles.interestBtnTextGroup}>
+                      <Text
+                        style={[
+                          styles.interestBtnMainText,
+                          formInterestStatus === 'NO' && styles.interestBtnTextNo,
+                        ]}
+                      >
+                        NO
+                      </Text>
+                      <Text
+                        style={[
+                          styles.interestBtnSubText,
+                          formInterestStatus === 'NO' && styles.interestBtnTextNo,
+                        ]}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                      >
+                        Not Interested
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 </View>
 
@@ -1623,17 +1684,21 @@ const styles = StyleSheet.create({
   /* MODAL */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
   },
   fieldVisitModalContent: {
     width: '100%',
-    maxHeight: '90%',
+    maxHeight: '94%',
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    flexDirection: 'column',
   },
   modalHeaderRow: {
     flexDirection: 'row',
@@ -1642,7 +1707,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
-    marginBottom: 14,
+    marginBottom: 12,
   },
   modalHeaderTitleGroup: {
     flexDirection: 'row',
@@ -1673,13 +1738,16 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   modalScrollBody: {
-    flexGrow: 0,
+    flexShrink: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: 20,
   },
   stepBox: {
     backgroundColor: '#F8FAFC',
     borderRadius: 14,
-    padding: 14,
-    marginBottom: 12,
+    padding: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
@@ -1861,7 +1929,7 @@ const styles = StyleSheet.create({
   },
   interestDecisionRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   interestBtn: {
     flex: 1,
@@ -1872,7 +1940,29 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
     borderRadius: 10,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    minHeight: 48,
+  },
+  interestBtnIcon: {
+    marginRight: 6,
+  },
+  interestBtnTextGroup: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    flexShrink: 1,
+  },
+  interestBtnMainText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#334155',
+    lineHeight: 16,
+  },
+  interestBtnSubText: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: '#64748B',
+    lineHeight: 13,
   },
   interestBtnYesActive: {
     backgroundColor: '#ECFDF5',
@@ -1881,11 +1971,6 @@ const styles = StyleSheet.create({
   interestBtnNoActive: {
     backgroundColor: '#FEF2F2',
     borderColor: '#EF4444',
-  },
-  interestBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#475569',
   },
   interestBtnTextYes: {
     color: '#047857',

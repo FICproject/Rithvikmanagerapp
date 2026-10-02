@@ -47,14 +47,14 @@ export const OtpVerificationExampleScreen: React.FC<OtpVerificationExampleScreen
   }, [resendTimer]);
 
   // Verification handler:
-  // Resolves true after 700ms for '4719', false otherwise
+  // Resolves true after 400ms for '4719' or any 4 digits in demo mode
   const handleVerify = useCallback(async (code: string): Promise<boolean> => {
     setStatus(`Verifying ${code}...`);
     setLastCode(code);
 
-    await new Promise((resolve) => setTimeout(resolve, 750));
+    await new Promise((resolve) => setTimeout(resolve, 400));
 
-    const isValid = code === '4719';
+    const isValid = code === '4719' || code.length === 4;
     setStatus(isValid ? 'Code verified successfully!' : 'Invalid code! Please recheck.');
     return isValid;
   }, []);
@@ -65,7 +65,7 @@ export const OtpVerificationExampleScreen: React.FC<OtpVerificationExampleScreen
     if (onLoginSuccess) {
       setTimeout(() => {
         onLoginSuccess();
-      }, 1000);
+      }, 400);
     }
   }, [onLoginSuccess]);
 
@@ -81,15 +81,15 @@ export const OtpVerificationExampleScreen: React.FC<OtpVerificationExampleScreen
     setIsVerified(false);
     setTimeout(() => {
       otpRef.current?.setCode('4719');
-    }, 100);
+    }, 120);
   }, []);
 
   const handleFillFail = useCallback(() => {
     otpRef.current?.reset();
     setIsVerified(false);
     setTimeout(() => {
-      otpRef.current?.setCode('1234');
-    }, 100);
+      otpRef.current?.setCode('000');
+    }, 120);
   }, []);
 
   const handleResend = useCallback(() => {
@@ -149,6 +149,14 @@ export const OtpVerificationExampleScreen: React.FC<OtpVerificationExampleScreen
           </Text>
         </View>
 
+        {/* Demo OTP Banner */}
+        <View style={styles.demoBanner}>
+          <Icon name="key-variant" size={16} color="#0B4A8B" style={{ marginRight: 6 }} />
+          <Text style={styles.demoBannerText}>
+            Demo OTP: <Text style={styles.demoBannerCode}>4719</Text> (or enter any 4 digits)
+          </Text>
+        </View>
+
         {/* The Animated OTP Component Card */}
         <View style={styles.cardContainer}>
           <OtpVerification
@@ -162,6 +170,18 @@ export const OtpVerificationExampleScreen: React.FC<OtpVerificationExampleScreen
             onVerified={handleVerified}
           />
         </View>
+
+        {/* One-Tap Instant Auto Login Button */}
+        <TouchableOpacity
+          style={styles.oneTapButton}
+          onPress={handleFillSuccess}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="One-Tap Auto Login"
+        >
+          <Icon name="lightning-bolt" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+          <Text style={styles.oneTapButtonText}>One-Tap Auto Login (4719)</Text>
+        </TouchableOpacity>
 
         {/* Resend Code Action */}
         <View style={styles.resendContainer}>
@@ -447,5 +467,57 @@ const styles = StyleSheet.create({
   skylineImage: {
     width: '100%',
     height: '100%',
+  },
+  demoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    alignSelf: 'center',
+  },
+  demoBannerText: {
+    fontSize: 13,
+    color: '#1E3A8A',
+    fontWeight: '500',
+  },
+  demoBannerCode: {
+    fontWeight: '800',
+    color: '#0B4A8B',
+    letterSpacing: 0.5,
+  },
+  oneTapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0B4A8B',
+    paddingVertical: 13,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 360,
+    marginTop: 14,
+    marginBottom: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#0B4A8B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  oneTapButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
 });

@@ -30,17 +30,17 @@ com.ficmanagerapp-jetified-annotation-experimental-1.4.0-28 C:\Users\user\.gradl
 com.ficmanagerapp-cardview-1.0.0-29 C:\Users\user\.gradle\caches\8.8\transforms\d37b018ab1cd28e93026d9297c7fecc9\transformed\cardview-1.0.0\res
 com.ficmanagerapp-jetified-viewpager2-1.0.0-30 C:\Users\user\.gradle\caches\8.8\transforms\e7c56833af9c88357de7fe1dd5c19d18\transformed\jetified-viewpager2-1.0.0\res
 com.ficmanagerapp-jetified-lifecycle-viewmodel-savedstate-2.6.2-31 C:\Users\user\.gradle\caches\8.8\transforms\ea16219a194eed9f9da9bf98cce1db41\transformed\jetified-lifecycle-viewmodel-savedstate-2.6.2\res
-com.ficmanagerapp-res-32 T:\frontend\android\app\build\generated\res\createBundleReleaseJsAndAssets
-com.ficmanagerapp-pngs-33 T:\frontend\android\app\build\generated\res\pngs\release
-com.ficmanagerapp-resValues-34 T:\frontend\android\app\build\generated\res\resValues\release
-com.ficmanagerapp-packageReleaseResources-35 T:\frontend\android\app\build\intermediates\incremental\release\packageReleaseResources\merged.dir
-com.ficmanagerapp-packageReleaseResources-36 T:\frontend\android\app\build\intermediates\incremental\release\packageReleaseResources\stripped.dir
-com.ficmanagerapp-release-37 T:\frontend\android\app\build\intermediates\merged_res\release\mergeReleaseResources
-com.ficmanagerapp-main-38 T:\frontend\android\app\src\main\res
-com.ficmanagerapp-release-39 T:\frontend\android\app\src\release\res
-com.ficmanagerapp-release-40 T:\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\packaged_res\release\packageReleaseResources
-com.ficmanagerapp-release-41 T:\frontend\node_modules\react-native-reanimated\android\build\intermediates\packaged_res\release\packageReleaseResources
-com.ficmanagerapp-release-42 T:\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\packaged_res\release\packageReleaseResources
-com.ficmanagerapp-release-43 T:\frontend\node_modules\react-native-screens\android\build\intermediates\packaged_res\release\packageReleaseResources
-com.ficmanagerapp-release-44 T:\frontend\node_modules\react-native-svg\android\build\intermediates\packaged_res\release\packageReleaseResources
-com.ficmanagerapp-release-45 T:\frontend\node_modules\react-native-vector-icons\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-res-32 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\generated\res\createBundleReleaseJsAndAssets
+com.ficmanagerapp-pngs-33 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\generated\res\pngs\release
+com.ficmanagerapp-resValues-34 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\generated\res\resValues\release
+com.ficmanagerapp-packageReleaseResources-35 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\intermediates\incremental\release\packageReleaseResources\merged.dir
+com.ficmanagerapp-packageReleaseResources-36 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\intermediates\incremental\release\packageReleaseResources\stripped.dir
+com.ficmanagerapp-release-37 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\build\intermediates\merged_res\release\mergeReleaseResources
+com.ficmanagerapp-main-38 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\res
+com.ficmanagerapp-release-39 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\release\res
+com.ficmanagerapp-release-40 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-gesture-handler\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-release-41 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-reanimated\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-release-42 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-safe-area-context\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-release-43 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-screens\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-release-44 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-svg\android\build\intermediates\packaged_res\release\packageReleaseResources
+com.ficmanagerapp-release-45 C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\node_modules\react-native-vector-icons\android\build\intermediates\packaged_res\release\packageReleaseResources

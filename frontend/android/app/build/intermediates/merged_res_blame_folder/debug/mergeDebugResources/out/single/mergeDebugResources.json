@@ -12,20 +12,20 @@
         "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\drawable-mdpi\\src_assets_logo_google_icon.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\mipmap-xxxhdpi\\ic_launcher_round.png"
-    },
-    {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable-mdpi_src_assets_vendors_map_preview.png.flat",
         "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\drawable-mdpi\\src_assets_vendors_map_preview.png"
     },
     {
-        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable-mdpi_src_assets_vendors_kumar_and_co.png.flat",
-        "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\drawable-mdpi\\src_assets_vendors_kumar_and_co.png"
+        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\mipmap-xxxhdpi\\ic_launcher_round.png"
     },
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\mipmap-xxxhdpi_ic_launcher.png.flat",
         "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable-mdpi_src_assets_vendors_kumar_and_co.png.flat",
+        "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\drawable-mdpi\\src_assets_vendors_kumar_and_co.png"
     },
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable_ic_launcher_foreground.png.flat",
@@ -34,10 +34,6 @@
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
         "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
-    },
-    {
-        "merged": "com.ficmanagerapp-debug-36:/xml_file_paths.xml.flat",
-        "source": "com.ficmanagerapp-main-38:/xml/file_paths.xml"
     },
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable-mdpi_src_assets_logo_empowering_banner.jpg.flat",
@@ -102,6 +98,10 @@
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\drawable-mdpi_src_assets_vendors_abc_traders.png.flat",
         "source": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-main-38:\\drawable-mdpi\\src_assets_vendors_abc_traders.png"
+    },
+    {
+        "merged": "com.ficmanagerapp-debug-36:/drawable-mdpi_src_assets_logo_fic_logo.png.flat",
+        "source": "com.ficmanagerapp-main-38:/drawable-mdpi/src_assets_logo_fic_logo.png"
     },
     {
         "merged": "C:\\Users\\user\\.gradle\\daemon\\8.8\\com.ficmanagerapp-debug-36:\\mipmap-xhdpi_ic_launcher.png.flat",

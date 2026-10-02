@@ -9,215 +9,270 @@
 9        android:targetSdkVersion="34" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->T:\frontend\android\app\src\main\AndroidManifest.xml:3:5-67
-11-->T:\frontend\android\app\src\main\AndroidManifest.xml:3:22-64
+11-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:3:5-67
+11-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:3:22-64
 12    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-12-->T:\frontend\android\app\src\main\AndroidManifest.xml:4:5-71
-12-->T:\frontend\android\app\src\main\AndroidManifest.xml:4:22-68
+12-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:4:5-71
+12-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:4:22-68
 13    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-13-->T:\frontend\android\app\src\main\AndroidManifest.xml:5:5-80
-13-->T:\frontend\android\app\src\main\AndroidManifest.xml:5:22-77
+13-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:5:5-80
+13-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:5:22-77
 14    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-14-->T:\frontend\android\app\src\main\AndroidManifest.xml:6:5-81
-14-->T:\frontend\android\app\src\main\AndroidManifest.xml:6:22-78
+14-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:6:5-81
+14-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:6:22-78
 15    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-15-->T:\frontend\android\app\src\main\AndroidManifest.xml:7:5-76
-15-->T:\frontend\android\app\src\main\AndroidManifest.xml:7:22-73
+15-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:7:5-76
+15-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:7:22-73
 16    <uses-permission android:name="android.permission.CAMERA" />
-16-->T:\frontend\android\app\src\main\AndroidManifest.xml:8:5-65
-16-->T:\frontend\android\app\src\main\AndroidManifest.xml:8:22-62
+16-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:8:5-65
+16-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:8:22-62
 17    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-17-->T:\frontend\android\app\src\main\AndroidManifest.xml:9:5-79
-17-->T:\frontend\android\app\src\main\AndroidManifest.xml:9:22-76
+17-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:9:5-79
+17-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:9:22-76
 18    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-18-->T:\frontend\android\app\src\main\AndroidManifest.xml:10:5-81
-18-->T:\frontend\android\app\src\main\AndroidManifest.xml:10:22-78
+18-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:10:5-81
+18-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:10:22-78
 19    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-19-->T:\frontend\android\app\src\main\AndroidManifest.xml:11:5-77
-19-->T:\frontend\android\app\src\main\AndroidManifest.xml:11:22-74
+19-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:11:5-77
+19-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:11:22-74
 20    <uses-permission android:name="android.permission.VIBRATE" />
-20-->T:\frontend\android\app\src\main\AndroidManifest.xml:12:5-66
-20-->T:\frontend\android\app\src\main\AndroidManifest.xml:12:22-63
+20-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:12:5-66
+20-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:12:22-63
 21    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-21-->T:\frontend\android\app\src\main\AndroidManifest.xml:13:5-81
-21-->T:\frontend\android\app\src\main\AndroidManifest.xml:13:22-78
+21-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:13:5-81
+21-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:13:22-78
 22
 23    <uses-feature
-23-->T:\frontend\android\app\src\main\AndroidManifest.xml:15:5-85
+23-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:5-85
 24        android:name="android.hardware.camera"
-24-->T:\frontend\android\app\src\main\AndroidManifest.xml:15:19-57
+24-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:19-57
 25        android:required="false" />
-25-->T:\frontend\android\app\src\main\AndroidManifest.xml:15:58-82
+25-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:15:58-82
 26    <uses-feature
-26-->T:\frontend\android\app\src\main\AndroidManifest.xml:16:5-95
+26-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:5-95
 27        android:name="android.hardware.camera.autofocus"
-27-->T:\frontend\android\app\src\main\AndroidManifest.xml:16:19-67
+27-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:19-67
 28        android:required="false" />
-28-->T:\frontend\android\app\src\main\AndroidManifest.xml:16:68-92
+28-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:16:68-92
 29
-30    <permission
-30-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
-31        android:name="com.ficmanagerapp.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-31-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
-32        android:protectionLevel="signature" />
-32-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
-33
-34    <uses-permission android:name="com.ficmanagerapp.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-34-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
-34-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
-35
-36    <application
-36-->T:\frontend\android\app\src\main\AndroidManifest.xml:18:5-59:19
-37        android:name="com.ficmanagerapp.MainApplication"
-37-->T:\frontend\android\app\src\main\AndroidManifest.xml:19:7-38
-38        android:allowBackup="false"
-38-->T:\frontend\android\app\src\main\AndroidManifest.xml:23:7-34
-39        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-39-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
-40        android:extractNativeLibs="false"
-41        android:icon="@mipmap/ic_launcher"
-41-->T:\frontend\android\app\src\main\AndroidManifest.xml:21:7-41
-42        android:label="FIC Manager"
-42-->T:\frontend\android\app\src\main\AndroidManifest.xml:20:7-34
-43        android:roundIcon="@mipmap/ic_launcher_round"
-43-->T:\frontend\android\app\src\main\AndroidManifest.xml:22:7-52
-44        android:supportsRtl="true"
-44-->T:\frontend\android\app\src\main\AndroidManifest.xml:26:7-33
-45        android:theme="@style/AppTheme"
-45-->T:\frontend\android\app\src\main\AndroidManifest.xml:24:7-38
-46        android:usesCleartextTraffic="true" >
-46-->T:\frontend\android\app\src\main\AndroidManifest.xml:25:7-42
-47
-48        <!-- FileProvider for Real Camera Photo Capture -->
-49        <provider
-50            android:name="androidx.core.content.FileProvider"
-50-->T:\frontend\android\app\src\main\AndroidManifest.xml:30:11-60
-51            android:authorities="com.ficmanagerapp.fileprovider"
-51-->T:\frontend\android\app\src\main\AndroidManifest.xml:31:11-62
-52            android:exported="false"
-52-->T:\frontend\android\app\src\main\AndroidManifest.xml:32:11-35
-53            android:grantUriPermissions="true" >
-53-->T:\frontend\android\app\src\main\AndroidManifest.xml:33:11-45
-54            <meta-data
-54-->T:\frontend\android\app\src\main\AndroidManifest.xml:34:11-36:52
-55                android:name="android.support.FILE_PROVIDER_PATHS"
-55-->T:\frontend\android\app\src\main\AndroidManifest.xml:35:15-65
-56                android:resource="@xml/file_paths" />
-56-->T:\frontend\android\app\src\main\AndroidManifest.xml:36:15-49
-57        </provider>
+30    <!-- Queries for document viewers and sharing intents on Android 11+ (API 30+) -->
+31    <queries>
+31-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:19:5-40:15
+32        <intent>
+32-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:20:9-23:18
+33            <action android:name="android.intent.action.VIEW" />
+33-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:13-65
+33-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:21-62
+34
+35            <data android:mimeType="*/*" />
+35-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+35-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+36        </intent>
+37        <intent>
+37-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:24:9-27:18
+38            <action android:name="android.intent.action.SEND" />
+38-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:25:13-65
+38-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:25:21-62
+39
+40            <data android:mimeType="*/*" />
+40-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+40-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+41        </intent>
+42        <intent>
+42-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:28:9-31:18
+43            <action android:name="android.intent.action.VIEW" />
+43-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:13-65
+43-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:21-62
+44
+45            <data android:mimeType="application/pdf" />
+45-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+45-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+46        </intent>
+47        <intent>
+47-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:32:9-35:18
+48            <action android:name="android.intent.action.VIEW" />
+48-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:13-65
+48-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:21-62
+49
+50            <data android:mimeType="text/csv" />
+50-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+50-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+51        </intent>
+52        <intent>
+52-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:36:9-39:18
+53            <action android:name="android.intent.action.VIEW" />
+53-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:13-65
+53-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:21:21-62
+54
+55            <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+55-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:13-44
+55-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:22:19-41
+56        </intent>
+57    </queries>
 58
-59        <!-- Firebase Cloud Messaging Default Notification Metadata -->
-60        <meta-data
-60-->T:\frontend\android\app\src\main\AndroidManifest.xml:40:7-42:55
-61            android:name="com.google.firebase.messaging.default_notification_channel_id"
-61-->T:\frontend\android\app\src\main\AndroidManifest.xml:41:11-87
-62            android:value="fic_notifications_channel" />
-62-->T:\frontend\android\app\src\main\AndroidManifest.xml:42:11-52
-63        <meta-data
-63-->T:\frontend\android\app\src\main\AndroidManifest.xml:43:7-45:52
-64            android:name="com.google.firebase.messaging.default_notification_icon"
-64-->T:\frontend\android\app\src\main\AndroidManifest.xml:44:11-81
-65            android:resource="@mipmap/ic_launcher" />
-65-->T:\frontend\android\app\src\main\AndroidManifest.xml:45:11-49
-66
-67        <activity
-67-->T:\frontend\android\app\src\main\AndroidManifest.xml:47:7-58:18
-68            android:name="com.ficmanagerapp.MainActivity"
-68-->T:\frontend\android\app\src\main\AndroidManifest.xml:48:9-37
-69            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
-69-->T:\frontend\android\app\src\main\AndroidManifest.xml:50:9-118
-70            android:exported="true"
-70-->T:\frontend\android\app\src\main\AndroidManifest.xml:53:9-32
-71            android:label="FIC Manager"
-71-->T:\frontend\android\app\src\main\AndroidManifest.xml:49:9-36
-72            android:launchMode="singleTask"
-72-->T:\frontend\android\app\src\main\AndroidManifest.xml:51:9-40
-73            android:windowSoftInputMode="adjustResize" >
-73-->T:\frontend\android\app\src\main\AndroidManifest.xml:52:9-51
-74            <intent-filter>
-74-->T:\frontend\android\app\src\main\AndroidManifest.xml:54:9-57:25
-75                <action android:name="android.intent.action.MAIN" />
-75-->T:\frontend\android\app\src\main\AndroidManifest.xml:55:13-65
-75-->T:\frontend\android\app\src\main\AndroidManifest.xml:55:21-62
+59    <permission
+59-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+60        android:name="com.ficmanagerapp.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+60-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+61        android:protectionLevel="signature" />
+61-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+62
+63    <uses-permission android:name="com.ficmanagerapp.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+63-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+63-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+64
+65    <application
+65-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:42:5-83:19
+66        android:name="com.ficmanagerapp.MainApplication"
+66-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:43:7-38
+67        android:allowBackup="false"
+67-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:47:7-34
+68        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+68-->[androidx.core:core:1.13.1] C:\Users\user\.gradle\caches\8.8\transforms\a1fcb37f7f436d4d2aa1435dda17d831\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+69        android:extractNativeLibs="false"
+70        android:icon="@mipmap/ic_launcher"
+70-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:45:7-41
+71        android:label="FIC Manager"
+71-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:44:7-34
+72        android:roundIcon="@mipmap/ic_launcher_round"
+72-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:46:7-52
+73        android:supportsRtl="true"
+73-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:50:7-33
+74        android:theme="@style/AppTheme"
+74-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:48:7-38
+75        android:usesCleartextTraffic="true" >
+75-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:49:7-42
 76
-77                <category android:name="android.intent.category.LAUNCHER" />
-77-->T:\frontend\android\app\src\main\AndroidManifest.xml:56:13-73
-77-->T:\frontend\android\app\src\main\AndroidManifest.xml:56:23-70
-78            </intent-filter>
-79        </activity>
-80
-81        <provider
-81-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
-82            android:name="androidx.startup.InitializationProvider"
-82-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
-83            android:authorities="com.ficmanagerapp.androidx-startup"
-83-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
-84            android:exported="false" >
-84-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
-85            <meta-data
-85-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
-86                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-86-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
-87                android:value="androidx.startup" />
-87-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
-88            <meta-data
-88-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
-89                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-89-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
-90                android:value="androidx.startup" />
-90-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
-91            <meta-data
-91-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
-92                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-92-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
-93                android:value="androidx.startup" />
-93-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
-94        </provider>
+77        <!-- FileProvider for Real Camera Photo Capture -->
+78        <provider
+79            android:name="androidx.core.content.FileProvider"
+79-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:54:11-60
+80            android:authorities="com.ficmanagerapp.fileprovider"
+80-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:55:11-62
+81            android:exported="false"
+81-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:56:11-35
+82            android:grantUriPermissions="true" >
+82-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:57:11-45
+83            <meta-data
+83-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:58:11-60:52
+84                android:name="android.support.FILE_PROVIDER_PATHS"
+84-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:59:15-65
+85                android:resource="@xml/file_paths" />
+85-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:60:15-49
+86        </provider>
+87
+88        <!-- Firebase Cloud Messaging Default Notification Metadata -->
+89        <meta-data
+89-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:64:7-66:55
+90            android:name="com.google.firebase.messaging.default_notification_channel_id"
+90-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:65:11-87
+91            android:value="fic_notifications_channel" />
+91-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:66:11-52
+92        <meta-data
+92-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:67:7-69:52
+93            android:name="com.google.firebase.messaging.default_notification_icon"
+93-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:68:11-81
+94            android:resource="@mipmap/ic_launcher" />
+94-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:69:11-49
 95
-96        <receiver
-96-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
-97            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-97-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
-98            android:directBootAware="false"
-98-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
-99            android:enabled="true"
-99-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
-100            android:exported="true"
-100-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
-101            android:permission="android.permission.DUMP" >
-101-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
-102            <intent-filter>
-102-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
-103                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-103-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
-103-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
-104            </intent-filter>
-105            <intent-filter>
-105-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
-106                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-106-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
-106-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+96        <activity
+96-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:71:7-82:18
+97            android:name="com.ficmanagerapp.MainActivity"
+97-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:72:9-37
+98            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+98-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:74:9-118
+99            android:exported="true"
+99-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:77:9-32
+100            android:label="FIC Manager"
+100-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:73:9-36
+101            android:launchMode="singleTask"
+101-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:75:9-40
+102            android:windowSoftInputMode="adjustResize" >
+102-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:76:9-51
+103            <intent-filter>
+103-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:78:9-81:25
+104                <action android:name="android.intent.action.MAIN" />
+104-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:79:13-65
+104-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:79:21-62
+105
+106                <category android:name="android.intent.category.LAUNCHER" />
+106-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:80:13-73
+106-->C:\Users\user\Downloads\Forge intern\FIC Manager App\frontend\android\app\src\main\AndroidManifest.xml:80:23-70
 107            </intent-filter>
-108            <intent-filter>
-108-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
-109                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-109-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
-109-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
-110            </intent-filter>
-111            <intent-filter>
-111-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
-112                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-112-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
-112-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
-113            </intent-filter>
-114        </receiver>
-115
-116        <meta-data
-116-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:12:9-14:37
-117            android:name="com.facebook.soloader.enabled"
-117-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:13:13-57
-118            android:value="false" />
-118-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:14:13-34
-119    </application>
-120
-121</manifest>
+108        </activity>
+109
+110        <provider
+110-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+111            android:name="androidx.startup.InitializationProvider"
+111-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:25:13-67
+112            android:authorities="com.ficmanagerapp.androidx-startup"
+112-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:26:13-68
+113            android:exported="false" >
+113-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:27:13-37
+114            <meta-data
+114-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+115                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+115-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:30:17-75
+116                android:value="androidx.startup" />
+116-->[androidx.emoji2:emoji2:1.2.0] C:\Users\user\.gradle\caches\8.8\transforms\0e6a841b3e38302cc1e93302cbb8032f\transformed\jetified-emoji2-1.2.0\AndroidManifest.xml:31:17-49
+117            <meta-data
+117-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+118                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+118-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+119                android:value="androidx.startup" />
+119-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\user\.gradle\caches\8.8\transforms\430f33a645e6e68189f6c675548bc1e1\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+120            <meta-data
+120-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+121                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+121-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+122                android:value="androidx.startup" />
+122-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+123        </provider>
+124
+125        <receiver
+125-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+126            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+126-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+127            android:directBootAware="false"
+127-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+128            android:enabled="true"
+128-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+129            android:exported="true"
+129-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+130            android:permission="android.permission.DUMP" >
+130-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+131            <intent-filter>
+131-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+132                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+132-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+132-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+133            </intent-filter>
+134            <intent-filter>
+134-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+135                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+135-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+135-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+136            </intent-filter>
+137            <intent-filter>
+137-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+138                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+138-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+138-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+139            </intent-filter>
+140            <intent-filter>
+140-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+141                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+141-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+141-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\user\.gradle\caches\8.8\transforms\68fd04c4f18613b2c5fbbef403a25cde\transformed\jetified-profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+142            </intent-filter>
+143        </receiver>
+144
+145        <meta-data
+145-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:12:9-14:37
+146            android:name="com.facebook.soloader.enabled"
+146-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:13:13-57
+147            android:value="false" />
+147-->[com.facebook.soloader:soloader:0.11.0] C:\Users\user\.gradle\caches\8.8\transforms\f3f791940fe5054d6d5ddcd9626de70f\transformed\jetified-soloader-0.11.0\AndroidManifest.xml:14:13-34
+148    </application>
+149
+150</manifest>

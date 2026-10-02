@@ -30,22 +30,23 @@ const getDynamicMockNotifications = (): AppNotification[] => {
   return [
     {
       id: 'notif-1',
-      title: 'Daily Report Reminder',
-      body: 'Your daily report for today is pending submission.',
-      category: NotificationCategory.DAILY_REPORT,
-      priority: Priority.HIGH,
-      targetManagerId: 'mgr-001',
+      title: 'High Priority Task Assigned',
+      body: 'Complete merchant verification for Sri Foods & Groceries in Parrys, Chennai.',
+      category: NotificationCategory.SYSTEM,
+      priority: Priority.CRITICAL,
+      targetManagerId: 'mgr-000',
       isRead: false,
-      deepLinkScreen: 'DailyReport',
+      deepLinkScreen: 'TaskDetail',
+      deepLinkParams: { taskId: 't-301' },
       createdAt: today930.toISOString(),
     },
     {
       id: 'notif-2',
-      title: 'Issue Updated',
-      body: 'Payment issue for Fresh Mart Supermarket was marked resolved.',
+      title: 'Issue Escalation Alert',
+      body: 'UPI payment settlement delay reported for Sri Foods (#TN-4402).',
       category: NotificationCategory.ISSUE_UPDATE,
-      priority: Priority.MEDIUM,
-      targetManagerId: 'mgr-001',
+      priority: Priority.HIGH,
+      targetManagerId: 'mgr-000',
       isRead: false,
       deepLinkScreen: 'IssueDetail',
       deepLinkParams: { issueId: 'iss-401' },
@@ -53,34 +54,35 @@ const getDynamicMockNotifications = (): AppNotification[] => {
     },
     {
       id: 'notif-3',
-      title: 'Report Submitted',
-      body: 'Your daily report for yesterday was submitted successfully.',
+      title: 'Daily Field Report Reminder',
+      body: 'Your state managerial summary for today is ready for final review.',
       category: NotificationCategory.DAILY_REPORT,
-      priority: Priority.LOW,
-      targetManagerId: 'mgr-001',
-      isRead: true,
-      deepLinkScreen: 'Reports',
+      priority: Priority.MEDIUM,
+      targetManagerId: 'mgr-000',
+      isRead: false,
+      deepLinkScreen: 'DailyReport',
       createdAt: yesterday.toISOString(),
     },
     {
       id: 'notif-4',
-      title: 'Vendor Scope Update',
-      body: 'Apex Wholesalers was added to your authorized territory scope.',
+      title: 'New Merchant Onboarded',
+      body: 'Kovai Spices & Organics was approved and added to Tamil Nadu vendor directory.',
       category: NotificationCategory.VENDOR_UPDATE,
-      priority: Priority.MEDIUM,
-      targetManagerId: 'mgr-001',
+      priority: Priority.LOW,
+      targetManagerId: 'mgr-000',
       isRead: true,
       deepLinkScreen: 'Vendors',
       createdAt: twoDaysAgo.toISOString(),
     },
     {
       id: 'notif-5',
-      title: 'System Broadcast',
-      body: 'Monthly operational metrics updated for District Manager role.',
-      category: NotificationCategory.SYSTEM,
+      title: 'Subordinate Report Received',
+      body: 'District Manager Suresh Menon submitted field report for Chennai District.',
+      category: NotificationCategory.DAILY_REPORT,
       priority: Priority.LOW,
-      targetManagerId: 'mgr-001',
+      targetManagerId: 'mgr-000',
       isRead: true,
+      deepLinkScreen: 'SubordinateReports',
       createdAt: threeDaysAgo.toISOString(),
     },
   ];
@@ -91,7 +93,7 @@ export class MockNotificationRepository implements INotificationRepository {
 
   async getNotifications(managerId: string): Promise<AppNotification[]> {
     return this.notifications
-      .filter(n => n.targetManagerId === managerId)
+      .filter(n => n.targetManagerId === managerId || managerId === 'mgr-000')
       .map(n => ({ ...n }));
   }
 

@@ -86,6 +86,8 @@ export interface Vendor {
   kycUrl?: string;
   panUrl?: string;
   aadhaarUrl?: string;
+  panNumber?: string;
+  aadhaarNumber?: string;
   documentUrls?: string[];
   status: VendorStatus;
   subcategory?: string;
@@ -324,6 +326,7 @@ export interface VisitRecord {
   photoUrl?: string;
   gpsCoords?: string;
   reasonNotInterested?: string;
+  voiceNoteUri?: string;
   voiceNoteDuration?: number;
 }
 

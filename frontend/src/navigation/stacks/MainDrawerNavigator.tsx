@@ -213,6 +213,9 @@ export const MainDrawerNavigator: React.FC = () => {
       case 'AddVendor':
         return (
           <AddVendorScreen
+            initialBusinessName={routeParams?.initialBusinessName}
+            initialCategory={routeParams?.initialCategory}
+            initialPhotoUri={routeParams?.initialPhotoUri}
             onBack={() => handleNavigate('Vendors')}
             onOpenDrawer={() => setIsDrawerOpen(true)}
             onNavigateRoute={handleNavigate}

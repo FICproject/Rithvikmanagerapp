@@ -9,13 +9,14 @@ const getInitialMockReports = (): DailyReport[] => {
   return [
     {
       id: 'dr-100',
-      managerId: 'mgr-001',
+      managerId: 'mgr-000',
       date: '2026-09-22',
-      workSummary: 'Routine vendor store visits and verification of catalog inventory.',
+      workSummary: 'Routine vendor store visits and verification of catalog inventory across Parrys & Kilpauk.',
       vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Fresh Mart Supermarket', location: 'Bengaluru' },
-        { vendorId: 'v-102', vendorName: 'ABC Stores', location: 'Mysuru' },
+        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
+        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
       ],
+      shopsVisitedCount: 2,
       issuesFollowUp: 'No major issues reported during yesterday visits.',
       additionalNotes: 'Follow-up scheduled with regional logistics coordinator.',
       status: 'SUBMITTED',
@@ -24,17 +25,18 @@ const getInitialMockReports = (): DailyReport[] => {
     },
     {
       id: 'dr-101',
-      managerId: 'mgr-001',
+      managerId: 'mgr-000',
       date: '2026-09-23',
-      workSummary: 'Completed vendor follow-ups and reviewed pending payment issues with Fresh Mart and ABC Stores.',
+      workSummary: 'Completed vendor follow-ups and reviewed pending payment issues with Sri Foods and Fresh Mart.',
       vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Fresh Mart Supermarket', location: 'Bengaluru' },
-        { vendorId: 'v-102', vendorName: 'ABC Stores', location: 'Mysuru' },
-        { vendorId: 'v-103', vendorName: 'Bharat Traders', location: 'Hubballi' },
-        { vendorId: 'v-104', vendorName: 'Kalyan Retailers', location: 'Mangaluru' },
-        { vendorId: 'v-105', vendorName: 'Apex Wholesalers', location: 'Belagavi' },
+        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
+        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
+        { vendorId: 'v-103', vendorName: 'Fresh Mart Supermarket', location: 'Kilpauk, Chennai' },
+        { vendorId: 'v-104', vendorName: 'Royal Electronics & Mobile', location: 'Adyar, Chennai' },
+        { vendorId: 'v-106', vendorName: 'Kovai Spices & Organics', location: 'Gandhipuram, Coimbatore' },
       ],
-      issuesFollowUp: 'Followed up on Fresh Mart invoice payout verification and POS display issues.',
+      shopsVisitedCount: 5,
+      issuesFollowUp: 'Followed up on Sri Foods invoice payout verification and POS display issues.',
       additionalNotes: 'All 5 scheduled vendor visits completed for the day.',
       status: 'SUBMITTED',
       createdAt: '2026-09-23T18:00:00.000Z',
@@ -42,15 +44,16 @@ const getInitialMockReports = (): DailyReport[] => {
     },
     {
       id: 'dr-102',
-      managerId: 'mgr-001',
+      managerId: 'mgr-000',
       date: '2026-09-20',
-      workSummary: 'Conducted field audits and onboarded new retail vendors in the south division.',
+      workSummary: 'Conducted field audits and onboarded new retail vendors in the Chennai North division.',
       vendorsVisited: [
-        { vendorId: 'v-101', vendorName: 'Fresh Mart Supermarket', location: 'Bengaluru' },
-        { vendorId: 'v-102', vendorName: 'ABC Stores', location: 'Mysuru' },
-        { vendorId: 'v-103', vendorName: 'Bharat Traders', location: 'Hubballi' },
+        { vendorId: 'v-101', vendorName: 'Sri Foods & Groceries', location: 'Parrys, Chennai' },
+        { vendorId: 'v-102', vendorName: 'ABC Traders & Textiles', location: 'Parrys, Chennai' },
+        { vendorId: 'v-103', vendorName: 'Fresh Mart Supermarket', location: 'Kilpauk, Chennai' },
       ],
-      issuesFollowUp: 'Assisted Bharat Traders with catalog sync support.',
+      shopsVisitedCount: 3,
+      issuesFollowUp: 'Assisted ABC Traders with catalog sync support.',
       additionalNotes: 'Verified documentation for GST tax invoices.',
       status: 'SUBMITTED',
       createdAt: '2026-09-20T18:00:00.000Z',
@@ -58,15 +61,16 @@ const getInitialMockReports = (): DailyReport[] => {
     },
     {
       id: 'dr-103',
-      managerId: 'mgr-001',
+      managerId: 'mgr-000',
       date: '2026-09-10',
       workSummary: 'Monthly planning meeting and territory coverage assessment for Q3 targets.',
       vendorsVisited: [
-        { vendorId: 'v-104', vendorName: 'Kalyan Retailers', location: 'Mangaluru' },
-        { vendorId: 'v-105', vendorName: 'Apex Wholesalers', location: 'Belagavi' },
+        { vendorId: 'v-104', vendorName: 'Royal Electronics & Mobile', location: 'Adyar, Chennai' },
+        { vendorId: 'v-106', vendorName: 'Kovai Spices & Organics', location: 'Gandhipuram, Coimbatore' },
       ],
-      issuesFollowUp: 'Logistics delivery delay resolved for Kalyan Retailers.',
-      additionalNotes: 'Quarterly growth report submitted to State Manager.',
+      shopsVisitedCount: 2,
+      issuesFollowUp: 'Logistics delivery delay resolved for Kovai Spices.',
+      additionalNotes: 'Quarterly growth report submitted to Central Operations.',
       status: 'SUBMITTED',
       createdAt: '2026-09-10T18:00:00.000Z',
       updatedAt: '2026-09-10T18:00:00.000Z',
@@ -165,7 +169,7 @@ export class MockDailyReportRepository implements IDailyReportRepository {
     period?: ReportPeriodFilter,
     searchQuery?: string
   ): Promise<DailyReport[]> {
-    let result = this.reports.filter(r => r.managerId === managerId);
+    let result = this.reports.filter(r => r.managerId === managerId || managerId === 'mgr-000');
 
     if (period && period !== 'ALL') {
       const now = new Date();
